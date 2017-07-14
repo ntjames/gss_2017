@@ -1,0 +1,9 @@
+Clean EXPN datasets for 2015
+-make sure values match CES website/published reports
+-determine subcategories?
+-add labels for display?
+
+Determine what to display in output plots
+-additional statistics for line plots (se?, median?, 5-num summary? box plot?)
+-additional plots (e.g. histogram)
+
