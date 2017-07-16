@@ -10,7 +10,10 @@ ui <- fluidPage(
     sidebarPanel( 
       sliderInput("qtr","Quarter",min=2015,max=2016,value=c(2015.25,2015.5)),
       selectInput("cat","Category", 
-                  choices = c("Expenditure - VOT" = "vot","Expenditure - VEQ" = "veq"),
+                  choices = c("Expenditure - VOT" = "vot",
+                              "Expenditure - VEQ" = "veq",
+                              "Expenditure - CLA" = "cla",
+                              "Expenditure - RNT" = "rnt"),
                   multiple=TRUE, selected="veq"),
       uiOutput("ui")
     ),
