@@ -31,8 +31,9 @@ server <- function(input, output) {
     if (is.null(input$cat))
       return()
 
-     selsub<-unique(filter(expn, cat %in% input$cat) %>% select(subcat))
-     selectInput("data", "Expenditure subcategory:", selsub, multiple=TRUE)
+    selsub<-unique(filter(expn, cat %in% input$cat) %>% select(subcat))
+    selectInput("data", "Expenditure subcategory:", selsub, multiple=TRUE)
+   # selectInput("data", "Expenditure subcategory:", list("foo"=c("a","b"),"bar"=c("c","d")), multiple=TRUE)
   })
   
   # renderPlotly()
