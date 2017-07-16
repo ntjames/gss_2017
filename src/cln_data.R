@@ -11,60 +11,57 @@ library(plotly)
 kp_id<-quote(c(qyear,newid,seqno,alcno))
 
 # cla - clothing
-head(cla15)
-hist(cla15$clothxa)
-cla15$rn<-1:nrow(cla15)
-
-#sample 10000 records
-smp<-sample(nrow(cla15),10000)
-
-cla15sub<-subset(cla15,rn %in% smp,
-                 select=c(eval(kp_id),clothya,clothmoa,clothxa))
 
 #check NA
 #cla15na<-subset(cla15,is.na(clothxa),
 #                select=c(qyear,newid,seqno,alcno,clothya,clothmoa,clothxa))
 
 #sum monthly cost by newid
-cla15mn0<-aggregate(cla15sub$clothxa, by=list(cla15sub$newid,cla15sub$clothmoa),
+# cla15mn0<-aggregate(cla15sub$clothxa, by=list(cla15sub$newid,cla15sub$clothmoa),
           function(x) sum(x,na.rm=TRUE))
 
 #median per month
-cla15med<-aggregate(cla15mn0$x,list(cla15mn0$Group.2),median)
-cla15avg<-aggregate(cla15mn0$x,list(cla15mn0$Group.2),mean)
-cla15dat<-merge(cla15med,cla15avg,by="Group.1")
+# cla15med<-aggregate(cla15mn0$x,list(cla15mn0$Group.2),median)
+# cla15avg<-aggregate(cla15mn0$x,list(cla15mn0$Group.2),mean)
 
 #sample records
 cla15$rn<-1:nrow(cla15)
 smp<-sample(nrow(cla15),10000)
 
 ## tidyverse
+kp_id<-c("qyear","newid","seqno","alcno")
+
 ca15<-as_tibble(cla15)
 
-ca15_s<-filter(ca15,rn %in% smp) %>% select(.,contains("clothx"),-contains("_"),"qyear") %>% 
-  group_by(qyear) %>% summarize_all(funs(mean(.,na.rm=TRUE))) %>% gather(subcat,val,-qyear)
+##!! need to sum over newid, then average by quarter??
+ca15_s<-filter(ca15,rn %in% smp) %>% select("clothya","clothxa","clothmoa",kp_id) %>% 
+  group_by(qyear) %>% summarize_at("clothxa",funs(mean(.,na.rm=TRUE))) %>% 
+  gather(subcat,val,-qyear)
 
-
-filter(ca15,rn %in% smp) %>% select(.,contains("clothx"),-contains("_"),"qyear") %>% 
-  group_by(qyear) %>% summarize_all(funs(mean(.,na.rm=TRUE),median(.,na.rm=TRUE) )) 
+#filter(ca15,rn %in% smp) %>% select(.,contains("clothx"),-contains("_"),"qyear") %>% 
+#  group_by(qyear) %>% summarize_all(funs(mean(.,na.rm=TRUE),median(.,na.rm=TRUE) )) 
 
 
 # rnt - rented living quarters
-head(rnt15)
+#head(rnt15)
 names(rnt15)
 rnt15$rn<-1:nrow(rnt15)
 
 #sample 1000 records
 smp<-sample(nrow(rnt15),1000)
 
-rnt15sub<-subset(rnt15,rn %in% smp,
-                 select=c(eval(kp_id),qrt3mcmx))
-
 #sum monthly cost by newid ??
 
 #median per month?? only have per ref period of 3 mon
-rnt15med<-aggregate(rnt15sub$qrt3mcmx,list(rnt15sub$qyear),
-                    function(x) median(x,na.rm=TRUE))
+#rnt15med<-aggregate(rnt15sub$qrt3mcmx,list(rnt15sub$qyear),
+#                    function(x) median(x,na.rm=TRUE))
+
+rt15<-as_tibble(rnt15)
+
+##!! need to sum over newid, then average by quarter??
+rt15_s<-filter(rt15,rn %in% smp) %>% select("qrt3mcmx",kp_id) %>% 
+  group_by(qyear) %>% summarize_at("qrt3mcmx",funs(mean(.,na.rm=TRUE))) %>% 
+  gather(subcat,val,-qyear)
 
 # rtv - rented vehicles
 
@@ -129,7 +126,8 @@ plot_ly(vo15_s,x=~qyear, y=~val, split=~subcat,type="scatter",mode="lines") %>%
          yaxis = list(title="expenditure ($)")) 
 
 #### Merge datasets
-expn<-bind_rows(mutate(vq15_s,cat="veq"),mutate(vo15_s,cat="vot"))
+expn<-bind_rows(mutate(ca15_s,cat="cla"),mutate(rt15_s,cat="rnt"),
+  mutate(vq15_s,cat="veq"),mutate(vo15_s,cat="vot"))
 
 
 # xpb - taxis, limousines, and mass transportation
