@@ -1,11 +1,16 @@
-wd<-file.path("~/Dropbox/njames/school/PhD/misc/GSS_data_challenge/gss_2017")
-setwd(wd)
-library(ProjectTemplate)
-load.project()
 
+#set path depending on user
+hn<-system2("hostname",stdout=TRUE)
+wd<-switch(hn,
+       blackwell=file.path("~/Dropbox/njames/school/PhD/misc/GSS_data_challenge/gss_2017"),
+       other_computer=file.path("path_to_gss_2017_on_other_computer"))
+setwd(wd)
+
+library(ProjectTemplate)
 library(tidyverse)
-library(plotly)
-# https://plot.ly/r/
+library(plotly) # https://plot.ly/r/
+
+load.project()
 
 #explore EXPN (annual expenditure) files
 kp_id<-quote(c(qyear,newid,seqno,alcno))
@@ -125,9 +130,13 @@ plot_ly(vo15_s,x=~qyear, y=~val, split=~subcat,type="scatter",mode="lines") %>%
   layout(xaxis = list(title="quarter"), 
          yaxis = list(title="expenditure ($)")) 
 
+
+
 #### Merge datasets
 expn<-bind_rows(mutate(ca15_s,cat="cla"),mutate(rt15_s,cat="rnt"),
   mutate(vq15_s,cat="veq"),mutate(vo15_s,cat="vot"))
+
+ggplot(data=filter(expn,cat %in% 'cla'), aes(qyear,val))+geom_line()
 
 
 # xpb - taxis, limousines, and mass transportation
