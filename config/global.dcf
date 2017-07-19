@@ -5,7 +5,7 @@ recursive_loading: FALSE
 munging: TRUE
 logging: FALSE
 load_libraries: TRUE
-libraries: tidyverse, reshape, plyr, stringr, lubridate, plotly
+libraries: tidyverse, reshape, stringr, lubridate, plotly
 as_factors: TRUE
 data_tables: FALSE
 attach_internal_libraries: FALSE

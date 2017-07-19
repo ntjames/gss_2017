@@ -6,9 +6,10 @@ wd<-switch(hn,
        other_computer=file.path("path_to_gss_2017_on_other_computer"))
 setwd(wd)
 
+#load ProjectTemplate ( http://projecttemplate.net )
 library(ProjectTemplate)
-library(tidyverse)
-library(plotly) # https://plot.ly/r/
+
+#see gss_2017/config/global.dcf for config. options (e.g., libraries, preprocessing)
 
 load.project()
 
