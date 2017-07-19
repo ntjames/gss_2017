@@ -2,7 +2,7 @@
 #set path depending on user
 hn<-system2("hostname",stdout=TRUE)
 wd<-switch(hn,
-       blackwell=file.path("~/Dropbox/njames/school/PhD/misc/GSS_data_challenge/gss_2017"),
+       blackwell=file.path("~/Dropbox/njames/school/PhD/misc/gss_2017"),
        other_computer=file.path("path_to_gss_2017_on_other_computer"))
 setwd(wd)
 
