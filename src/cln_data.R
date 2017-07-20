@@ -158,6 +158,8 @@ plot_ly(filter(expn,cat %in% 'veq'),
 # xpb - taxis, limousines, and mass transportation
 
 # xpa - food & beverages
+save(xpa15,file=file.path(wd,"cache","xpa15_cache.RData"))
+
 head(xpa15)
 names(xpa15)
 xpa15$rn<-1:nrow(xpa15)
