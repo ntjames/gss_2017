@@ -1,6 +1,14 @@
+#set path depending on user
+hn<-system2("hostname",stdout=TRUE)
+wd<-switch(hn,
+           blackwell=file.path("~/Dropbox/njames/school/PhD/misc/gss_2017"),
+           other_computer=file.path("path_to_gss_2017_on_other_computer"))
+setwd(wd)
+
+load(file.path(wd,"cache","expn.RData"))
+
 library(shiny)
-library(plotly)
-# https://plot.ly/r/
+library(plotly) # https://plot.ly/r/
 
 ui <- fluidPage(
   

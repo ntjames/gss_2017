@@ -139,6 +139,9 @@ plot_ly(vo15_s,x=~qyear, y=~val, split=~subcat,type="scatter",mode="lines") %>%
 expn<-bind_rows(mutate(ca15_s,cat="cla"),mutate(rt15_s,cat="rnt"),
   mutate(vq15_s,cat="veq"),mutate(vo15_s,cat="vot")) %>% group_by(subcat)
 
+##cache expn dataset
+cache('expn')
+
 # ???
 expn$subcat<-as.factor(expn$subcat)
 
