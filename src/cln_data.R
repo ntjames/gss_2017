@@ -1,9 +1,9 @@
 
 #set path depending on user
-hn<-system2("hostname",stdout=TRUE)
-wd<-switch(hn,
-       blackwell=file.path("~/Dropbox/njames/school/PhD/misc/gss_2017"),
-       other_computer=file.path("path_to_gss_2017_on_other_computer"))
+user<-system2("whoami", stdout=TRUE)
+wd<-switch(user,
+       nathan=file.path("~/Dropbox/njames/school/PhD/misc/gss_2017"),
+       another_user=file.path("path_to_gss_2017_on_other_computer")) ##! need to edit this line
 setwd(wd)
 
 #load ProjectTemplate ( http://projecttemplate.net )
