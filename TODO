@@ -1,9 +1,14 @@
-Clean EXPN datasets for 2015
+Clean EXPN datasets
 -make sure values match CES website/published reports
 -determine subcategories?
 -add labels for display?
+-want data by newid (consumer user) - note
+-add demographics (household size, income, gender? education?)
+-need to add additional years of EXPN/interview data
 
 Determine what to display in output plots
+-multiple tabs from general to detailed (overview, summary, longitudinal, cross-sectional, other?)
 -additional statistics for line plots (se?, median?, 5-num summary? box plot?)
 -additional plots (e.g. histogram)
 
+Option to download or export data/figure??
