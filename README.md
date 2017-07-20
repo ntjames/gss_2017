@@ -1,11 +1,6 @@
 # gss_2017
 
-Welcome to ProjectTemplate!
-
-This file introduces you to ProjectTemplate, but you should eventually replace
-the contents of this file with an introduction to your project. People who
-work with your data in the future will thank you for it, including your future
-self.
+Code for 2017 JSM Data Challenge
 
 ProjectTemplate is an R package that helps you organize your statistical
 analysis projects. Since you're reading this file, we'll assume that you've
