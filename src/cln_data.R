@@ -137,10 +137,20 @@ plot_ly(vo15_s,x=~qyear, y=~val, split=~subcat,type="scatter",mode="lines") %>%
 
 #### Merge datasets
 expn<-bind_rows(mutate(ca15_s,cat="cla"),mutate(rt15_s,cat="rnt"),
-  mutate(vq15_s,cat="veq"),mutate(vo15_s,cat="vot"))
+  mutate(vq15_s,cat="veq"),mutate(vo15_s,cat="vot")) %>% group_by(subcat)
 
-ggplot(data=filter(expn,cat %in% 'cla'), aes(qyear,val))+geom_line()
+# ???
+expn$subcat<-as.factor(expn$subcat)
 
+ggplot(data=filter(expn,cat %in% 'veq'), aes(qyear,val))+geom_line(aes(group=subcat,color=subcat))
+
+ggplot(data=filter(expn,cat %in% 'veq'), aes(qyear,val,group=subcat)) + geom_line(aes(color=subcat))
+
+ggplot(economics_long, aes(date, value01, colour = variable)) + geom_line()
+
+
+plot_ly(filter(expn,cat %in% 'veq'), 
+        x=~qyear, y=~val, split=~subcat, type="scatter", mode="lines")
 
 # xpb - taxis, limousines, and mass transportation
 
