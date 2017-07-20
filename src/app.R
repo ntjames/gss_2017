@@ -26,8 +26,8 @@ ui <- fluidPage(
       sidebarPanel(
          selectInput("variable",
                      "Choose a variable:",
-                     choices=c('Dining Out','Alcohol Expenses')),
-         numericInput("obs", "Number of observations to view:", 10),
+                     choices=c('Dining Out'='JDINEOQV','Alcohol Expenses'='JALOUTQV')),
+         numericInput("obs", "Number of observations to view:", 5),
          
          selectInput("variable",
                      "Choose a variable:",
@@ -55,20 +55,21 @@ server <- function(input, output) {
   names(xpa15) %<>% toupper
   dat<- xpa15
   
-  datasetInput <- reactive({
-    switch(input$variable,
-           "Dining Out" = dat$JDINEOQV,
-           "Alchohol Expenses" = dat$JALOUTQV)
-  })
+#  datasetInput <- reactive({
+#    switch(input$variable,
+#           "Dining Out" = dat$JDINEOQV,
+#           "Alchohol Expenses" = dat$JALOUTQV)
+#  })
   
   output$summary <- renderPrint({
-    dataset <- datasetInput()
-    summary(dataset)
+#    dataset <- datasetInput()
+#    summary(dataset)
+    summary(select(dat,input$variable))
   })
   
   # Show the first "n" observations
   output$view <- renderTable({
-    head(datasetInput(), n = input$obs)
+    head(select(dat,input$variable), n = input$obs)
   })
    
    output$distPlot <- renderPlot({
@@ -79,8 +80,8 @@ server <- function(input, output) {
       #                  mean(food.dat$JDINEOQV[food.dat$QYEAR==20154]),mean(food.dat$JDINEOQV[food.dat$QYEAR==20161]))
       # timePlot <- plot(y=mean.dineout,x=x,type='p')
      
-      dat %>% group_by(QYEAR) %>% summarize(mean=mean(JDINEOQV)) %>% 
-       ggplot(aes(QYEAR, mean,group=1)) + geom_line()
+      dat %>% group_by(QYEAR) %>% summarize_at(input$variable,funs(mean(.,na.rm=TRUE))) %>% 
+       ggplot(aes(QYEAR,get(input$variable),group=1)) + geom_line()
       
    })
 }
