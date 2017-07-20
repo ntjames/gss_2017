@@ -13,6 +13,8 @@ library(ProjectTemplate)
 
 load.project()
 
+#currently use only CESD PUMD Interview files
+
 #explore EXPN (annual expenditure) files
 kp_id<-quote(c(qyear,newid,seqno,alcno))
 
