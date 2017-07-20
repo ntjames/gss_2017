@@ -15,7 +15,8 @@ ui <- fluidPage(
                               "Expenditure - CLA" = "cla",
                               "Expenditure - RNT" = "rnt"),
                   multiple=TRUE, selected="veq"),
-      uiOutput("ui")
+      uiOutput("ui"),
+      actionButton("plotButton", "Plot!")
     ),
     mainPanel(
       plotlyOutput("plot"),
@@ -36,20 +37,34 @@ server <- function(input, output) {
    # selectInput("data", "Expenditure subcategory:", list("foo"=c("a","b"),"bar"=c("c","d")), multiple=TRUE)
   })
   
-  # renderPlotly()
-  output$plot <- renderPlotly({
-    plot_ly(filter(expn,cat %in% input$cat & subcat %in% input$data), 
-            x=~qyear, y=~val, split=~subcat, type="scatter", mode="lines") %>%
-      layout(xaxis = list(title="quarter"), 
-             yaxis = list(title="expenditure ($)")) 
+  # using plotly
+  # output$plot <- renderPlotly({
+  #   plot_ly(filter(expn,cat %in% input$cat & subcat %in% input$data),
+  #           x=~qyear, y=~val, split=~subcat, type="scatter", mode="lines") %>%
+  #     layout(xaxis = list(title="quarter"),
+  #            yaxis = list(title="expenditure ($)"))
+  # })
+  
+  # output$event <- renderPrint({
+  #   d <- event_data("plotly_hover")
+  #   if (is.null(d)) "Hover on a point!" else d
+  # })
+  
+  # using ggplotly & eventReactive to only plot when all options set
+  plt<-eventReactive(input$plotButton,{
+    p<-ggplot(filter(expn,cat %in% input$cat & subcat %in% input$data), aes(qyear,val,group=subcat))+
+      geom_line(aes(color=subcat))
+    
+    ggplotly(p)
   })
   
-   output$event <- renderPrint({
-     d <- event_data("plotly_hover")
-     if (is.null(d)) "Hover on a point!" else d
-   })
+  output$plot <- renderPlotly({
+    plt()
+  })
+  
 
 }
 
 
 shinyApp(ui, server)
+
