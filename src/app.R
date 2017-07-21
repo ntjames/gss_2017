@@ -9,11 +9,18 @@ wd<-switch(user,
            jacquelynneal=file.path("~jacquelynneal/Desktop/gss_2017"))
 setwd(wd)
 
+load(file.path(wd,"cache","expn.RData"))
 load(file.path(wd,"cache","xpa15_cache.RData"))
 
 library(shiny)
 library(tidyverse)
 library(magrittr)
+
+# use %<>% from magrittr
+names(xpa15) %<>% toupper
+dat<- data.frame(expn)
+dat$qyear <- factor(dat$qyear,levels=c('20151','20152','20153','20154','20161'),labels=c('Q1','Q2','Q3','Q4','Q5'))
+
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -63,11 +70,7 @@ server <- function(input, output) {
   
   # dat <- read.csv('/Users/jacquelynneal/Downloads/intrvw15/expn15/xpa15.csv',stringsAsFactors = FALSE)
   
-  # use %<>% from magrittr
-  names(xpa15) %<>% toupper
-  dat<- data.frame(expn)
-  dat$qyear <- factor(dat$qyear,levels=c('20151','20152','20153','20154','20161'),labels=c('Q1','Q2','Q3','Q4','Q5'))
-  
+ 
   #output$summary <- renderPrint({
 #    dataset <- datasetInput()
 #    summary(dataset)
