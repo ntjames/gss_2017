@@ -2,7 +2,9 @@
 user<-system2("whoami", stdout=TRUE)
 wd<-switch(user,
            nathan=file.path("~/Dropbox/njames/school/PhD/misc/gss_2017"),
-           another_user=file.path("path_to_gss_2017_on_other_computer")) ##! need to edit this line
+           jacquelynneal=file.path("~jacquelynneal/Desktop/gss_2017"))
+
+#wd<- file.path("~/Desktop/gss_2017")##! need to edit this line
 setwd(wd)
 
 load(file.path(wd,"cache","expn.RData"))
