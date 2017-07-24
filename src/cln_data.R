@@ -3,17 +3,35 @@
 user<-system2("whoami", stdout=TRUE)
 wd<-switch(user,
        nathan=file.path("~/Dropbox/njames/school/PhD/misc/gss_2017"),
-       another_user=file.path("path_to_gss_2017_on_other_computer")) ##! need to edit this line
+       jacquelynneal=file.path("~jacquelynneal/Desktop/gss_2017"))
 setwd(wd)
 
 #load ProjectTemplate ( http://projecttemplate.net )
-library(ProjectTemplate)
-
 #see gss_2017/config/global.dcf for config. options (e.g., libraries, preprocessing)
+library(ProjectTemplate)
 
 load.project()
 
+#don't perform munging
+# i.e. keep all data (e.g. diary and individual EXPN)
+load.project(list('munging'=FALSE)) 
+
 #currently use only CESD PUMD Interview files
+if 0{
+  FMLI - CU characteristics, income, and summary level expenditures
+  MEMI - member characteristics, income data
+  MTBI - monthly expenditures at UCC level
+  ITBI - income converted to monthly time frame
+  ITII - imputation variants of income converted to monthly time frame
+  NTAXI - fed. and state tax info
+  FPAR - CU level paradata about interview survey
+  MCHI - para data about each interview contact attempt
+  
+  ISTUB - aggregation scheme used in published CES interview tables, 
+          contain UCCs & abbreviated titles
+  
+  EXPN - 43 detailed expenditure files
+  }
 
 #explore EXPN (annual expenditure) files
 kp_id<-quote(c(qyear,newid,seqno,alcno))
