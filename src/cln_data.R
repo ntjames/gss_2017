@@ -12,26 +12,45 @@ library(ProjectTemplate)
 
 load.project()
 
-#don't perform munging
-# i.e. keep all data (e.g. diary and individual EXPN)
-load.project(list('munging'=FALSE)) 
+# don't perform munging  i.e. keep all data (e.g. diary and individual EXPN)
+# load.project(list('munging'=FALSE)) 
 
 #currently use only CESD PUMD Interview files
-if 0{
-  FMLI - CU characteristics, income, and summary level expenditures
-  MEMI - member characteristics, income data
-  MTBI - monthly expenditures at UCC level
-  ITBI - income converted to monthly time frame
-  ITII - imputation variants of income converted to monthly time frame
-  NTAXI - fed. and state tax info
-  FPAR - CU level paradata about interview survey
-  MCHI - para data about each interview contact attempt
-  
-  ISTUB - aggregation scheme used in published CES interview tables, 
-          contain UCCs & abbreviated titles
-  
-  EXPN - 43 detailed expenditure files
-  }
+if (0) {
+  # FMLI - CU characteristics, income, and summary level expenditures
+  # MEMI - member characteristics, income data
+  # MTBI - monthly expenditures at UCC level
+  # ITBI - income converted to monthly time frame
+  # ITII - imputation variants of income converted to monthly time frame
+  # NTAXI - fed. and state tax info
+  # FPAR - CU level paradata about interview survey
+  # MCHI - para data about each interview contact attempt
+   
+  # ISTUB - aggregation scheme used in published CES interview tables, 
+  #         contain UCCs & abbreviated titles
+   
+  # EXPN - 43 detailed expenditure files
+}
+
+#load istub 
+#! need to modify for multiple files
+procpath<-file.path(getwd(),"procdata")
+procfiles<-dir(procpath)
+
+#get wrapped rows, append X3 in wrapped row to X3 in previous row 
+pt<-read_table(file.path(procpath,procfiles),
+               col_names=c("type","level","title","var_ucc","source","factor","group"),
+               skip=1)
+pt_rw<-1:nrow(pt)
+w2<-pt_rw[pt$type!=1] #wrap rows
+w1<-w2-1 # row above wrap row
+
+#head(pt[sort(c(w1,w2)),])
+pt[w1,"title"]<-paste(unlist(pt[w1,"title"]),unlist(pt[w2,"title"]))
+#head(pt[sort(c(w1,w2)),])
+
+pt_cln<-filter(pt,type==1) 
+
 
 #explore EXPN (annual expenditure) files
 kp_id<-quote(c(qyear,newid,seqno,alcno))
