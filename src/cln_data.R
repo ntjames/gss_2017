@@ -32,24 +32,87 @@ if (0) {
   # EXPN - 43 detailed expenditure files
 }
 
-#load istub 
-#! need to modify for multiple files
-procpath<-file.path(getwd(),"procdata")
-procfiles<-dir(procpath)
+
+## STEP 1: READ IN THE STUB PARAMETER FILE AND CREATE FORMATS  
+#?  need to modify for multiple files?
+stubpath<-file.path(getwd(),"stubdata")
+stubfn<-dir(stubpath)
 
 #get wrapped rows, append X3 in wrapped row to X3 in previous row 
-pt<-read_table(file.path(procpath,procfiles),
-               col_names=c("type","level","title","var_ucc","source","factor","group"),
-               skip=1)
-pt_rw<-1:nrow(pt)
-w2<-pt_rw[pt$type!=1] #wrap rows
+stubfile0<-read_table(file.path(stubpath,stubfn), skip=1,
+               col_names=c("type","level","title","var_ucc","source","factor","group"))
+stub_rw<-1:nrow(stubfile0)
+w2<-stub_rw[stubfile0$type!=1] #wrap rows
 w1<-w2-1 # row above wrap row
 
-#head(pt[sort(c(w1,w2)),])
-pt[w1,"title"]<-paste(unlist(pt[w1,"title"]),unlist(pt[w2,"title"]))
-#head(pt[sort(c(w1,w2)),])
+#head(stubfile0[sort(c(w1,w2)),])
+stubfile0[w1,"title"]<-paste(unlist(stubfile0[w1,"title"]),unlist(stubfile0[w2,"title"]))
+#head(stubfile0[sort(c(w1,w2)),])
 
-pt_cln<-filter(pt,type==1) 
+## subset data (drop wrap rows, title rows, and ASSET and ADDENDA group),
+# create new line variable
+stubfile<-filter(stubfile0, type==1, source != "T",
+               group %in% c("CUCHARS", "FOOD", "EXPEND", "INCOME")) %>%
+          mutate(count=9999+1:nrow(.),line=paste0(count,level))
+
+# start with a character vector with ten blank strings..
+curlines <- rep( "" , 10 )
+
+# initiate a matrix containing the line numbers of each expenditure category
+aggfmt0 <- matrix( nrow = nrow( stubfile ) , ncol = 10 )
+
+# loop through each record in the stubfile..
+for ( i in seq( nrow( stubfile ) ) ){
+  
+  # if the 'UCC' variable is numeric 
+    if (  identical(as.character(stubfile[i,"source"]),"I") ){
+    
+    # save the line number as the last element in the char vector
+    curlines[ 10 ] <- unlist(stubfile[ i , "line" ])
+    
+    # otherwise blank it out
+  } else curlines[ 10 ] <- ""
+  
+  # store the current line and level in separate atomic variables
+  curlevel <- unlist(stubfile[ i , "level" ])
+  
+  # write the current line inside the length-ten character vector
+  curlines[ curlevel ] <- unlist(stubfile[ i , "line" ])
+  
+  # if the current level is 1-8, blank out everything above it up to nine
+  if ( curlevel < 9 ) curlines[ (curlevel+1):9 ] <- ""
+  
+  # remove actual value
+  savelines <- curlines
+  savelines[ curlevel ] <- ""
+  
+  # overwrite the entire row with the character vector of length ten
+  aggfmt0[ i , ] <- savelines
+}
+
+# convert the matrix to a data frame and name columns line1 - line10
+# tack on the UCC and line columns from the stubfile (which has the same number of records)
+# remove records where the UCC is not numeric, order by UCC, rename line to compare
+aggfmt1 <- as_tibble(aggfmt0) %>% setNames(paste0( "line" , 1:10 )) %>%
+      bind_cols(select(stubfile,var_ucc,line,source)) %>%
+      filter(source=="I") %>% arrange(var_ucc) %>% rename(compare = line) %>%
+      mutate(source=NULL)
+
+# reset the row names/numbers
+#rownames( aggfmt1 ) <- NULL
+
+# transpose the data, holding UCC and compare
+aggfmt2 <- melt(data.frame(aggfmt1), id=c("var_ucc","compare"))
+names( aggfmt2 )[ 4 ] <- "line"
+
+# retain the UCC-to-line crosswalk wherever the 'line' variable is not blank
+aggfmt <- subset( aggfmt2 , line != "" , select = c( "var_ucc" , "line" ) )
+
+# re-order the data frame by UCC
+aggfmt <- aggfmt[ order( aggfmt$var_ucc ) , ]
+
+
+## start at line 319 in interview mean and se.R
 
 
 #explore EXPN (annual expenditure) files
