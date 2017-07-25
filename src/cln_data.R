@@ -153,14 +153,224 @@ fmli <-  transform(fmli,
     select(f.d.vars) # keeping only the 45 wtrep columns, plus the additional four written above
 
 
+# loop through the 45 wtrep variables in the newly-stacked fmly data frame..
+for ( i in 1:45 ){
+  
+  # convert all columns to numeric
+  fmli[ , wtrep[ i ] ] <- as.numeric( as.character( fmli[ , wtrep[ i ] ] ) )
+  
+  # replace all missings with zeroes
+  fmli[ is.na( fmli[ , wtrep[ i ] ] ) , wtrep[ i ] ] <- 0
+  
+  # multiply by months in scope, then divide by 12 (months)
+  fmli[ , repwt[ i ] ] <- ( fmli[ , wtrep[ i ] ] * fmli[ , "mo_scope" ] / 12 )
+}
 
 
+mtbi_files<-ls()[grep("mtbi",ls())]
+itbi_files<-ls()[grep("itbi",ls())]
+
+mtbi<-bind_rows(lapply(mtbi_files,get))  %>% select(newid, expname, ref_mo, ref_yr, ucc, cost)
+itbi<-bind_rows(lapply(itbi_files,get))  %>% select(newid, refmo, refyr, ucc, value) %>%
+  rename(cost=value, ref_mo=refmo,ref_yr=refyr)
+
+#! limit the itbi and mtbi (interview) data frames to records from the current year
+#!  with pubflags of two
+
+#! keep only newid, ucc, cost
+
+# stack the itbi and mtbi files
+# create a new 'source' column, with "I" (interview) throughout
+# multiply the 'COST' column by 4 whenever the UCC code is 710110
+# add leading zeroes to UCC's to ensure proper format
+expend<-bind_rows(mtbi,itbi) %>% 
+  mutate(src="I",cost=if_else(ucc=="710110",cost*4,cost),ucc=str_pad(ucc, 6, pad="0")) %>%
+  arrange(ucc)
+
+# delete all of the independent data frames from memory
+rm(list=c(mtbi_files,itbi_files))
+rm(mtbi,itbi)
+
+gc()
 
 
+library(DBI)
+library(RSQLite)
+
+# designate a temporary file to store a temporary database
+temp.db <- tempfile()
+
+# create a new connection to the temporary database file (defined above)
+db <- dbConnect( SQLite() , temp.db )
+
+# store the family data frame in that database
+dbWriteTable( db , 'fmli' , fmli , row.names = FALSE )
+
+# create an index on the fmly table to drastically speed up future queries
+dbSendQuery( db , "CREATE INDEX nsf ON fmli ( newid , src )" )
+
+# store the expenditure data frame in that database as well
+dbWriteTable( db , 'expend' , expend , row.names = FALSE )
+
+# create an index on the expend table to drastically speed up future queries
+dbSendQuery( db , "CREATE INDEX nse ON expend ( newid , src )" )
+
+# create a character vector rcost1 - rcost45
+rcost <- paste0( "rcost" , 1:45 )
+
+# partially build the sql string, multiply each 'wtrep##' variable by 'COST' and rename it 'rcost##'
+wtrep.cost <- paste0( "( b.COST * a." , wtrep , " ) as " , rcost , collapse = ", " )
+
+# build the entire sql string..
+sql.line <-
+  paste(
+    # creating a new 'pubfile' table, saving a few columns from each table
+    "create table pubfile as select a.newid , a.inclass , b.src , b.ucc ," ,
+    wtrep.cost ,
+    # joining the family and expenditure tables on two fields
+    "from fmli as a inner join expend as b on a.newid = b.newid AND a.src = b.src"
+  )
+
+# execute that sql query
+dbSendQuery(
+  db ,
+  sql.line
+)
 
 
+# create an index on the pubfile table to drastically speed up future queries
+dbSendQuery( db , "CREATE INDEX isu ON pubfile ( inclass , src , ucc )" )
 
 
+# /***************************************************************************/
+# /* STEP3: CALCULATE POPULATIONS                                            */
+# /* ----------------------------------------------------------------------- */
+# /*  SUM ALL 45 WEIGHT VARIABLES TO DERIVE REPLICATE POPULATIONS            */
+# /*  FORMATS FOR CORRECT COLUMN CLASSIFICATIONS                             */
+# /***************************************************************************/
+
+# create a character vector containing 45 variable names (rpop1, rpop2, ... rpop44, rpop45)
+rpop <- paste0( "rpop" , 1:45 )
+
+# partially build the sql string, sum each 'repwt##' variable into 'rpop##'
+rpop.sums <- paste( "sum( " , repwt , ") as " , rpop , collapse = ", " )
+
+# partially build the sql string, sum each 'rcost##' variable into the same column name, 'rcost##'
+rcost.sums <- paste( "sum( " , rcost , ") as " , rcost , collapse = ", " )
+
+# create a total population sum (not grouping by 'INCLASS' -- instead assigning everyone to '10')
+pop.all <- dbGetQuery( db , paste( "select 10 as inclass, src, " , rpop.sums , "from fmli group by src" ) )
+
+# create a population sum, grouped by INCLASS (the income class variable)
+pop.by <- dbGetQuery( db , paste( "select inclass, src," , rpop.sums , "from fmli group by inclass, src" ) )
+
+# stack the overall and grouped-by population tables
+pop <- rbind( pop.all , pop.by )
+
+# /***************************************************************************/
+# /* STEP4: CALCULATE WEIGHTED AGGREGATE EXPENDITURES                        */
+# /* ----------------------------------------------------------------------- */
+# /*  SUM THE 45 REPLICATE WEIGHTED EXPENDITURES TO DERIVE AGGREGATES/UCC    */
+# /*  FORMATS FOR CORRECT COLUMN CLASSIFICATIONS                             */
+# /***************************************************************************/
+
+
+# create the right hand side of the aggregate expenditures table
+aggright <-
+  # use a sql query from the temporary database (.db) file
+  dbGetQuery(
+    db ,
+    paste(
+      # group by INCLASS (income class) and a few other variables
+      "select inclass, src, ucc," ,
+      rcost.sums ,
+      "from pubfile group by src , inclass , ucc" ,
+      # the 'union' command stacks the grouped data (above) with the overall data (below)
+      "union" ,
+      # do not group by INCLASS, instead assign everyone as an INCLASS of ten
+      "select '10' as inclass, src , ucc," ,
+      rcost.sums ,
+      "from pubfile group by src , ucc"
+    )
+  )
+
+# disconnect from the temporary database (.db) file
+dbDisconnect( db )
+
+# delete that temporary database file from the local disk
+file.remove( temp.db )
+
+gc()
+
+
+# create three character vectors containing every combination of..
+
+# the expenditure table's source variable
+so <- names( table( expend$src ) )
+# the expenditure table's UCC variable
+uc <- names( table( expend$ucc ) )
+# the family table's INCLASS (income class) variable
+cl <- names( table( fmli[ , 'inclass' ] ) )
+# add a '10' - overall category to the INCLASS variable
+cl <- c( cl , "10" )
+
+# now create a data frame containing every combination of every variable in the above three vectors
+# (this matches the 'COMPLETETYPES' option in a sas proc summary call
+aggleft <- expand.grid( so , uc , cl )
+
+# name the columns in this new data frame appropriately
+names( aggleft ) <- c( 'src' , 'ucc' , 'inclass' )
+
+# perform a left-join, keeping all records in the left hand side, even ones without a match
+agg <- merge( aggleft , aggright , all.x = TRUE )
+
+# /***************************************************************************/
+# /* STEP5: CALCULTATE MEAN EXPENDITURES                                     */
+# /* ----------------------------------------------------------------------- */
+# /* 1 READ IN POPULATIONS AND LOAD INTO MEMORY USING A 3 DIMENSIONAL ARRAY  */
+# /*   POPULATIONS ARE ASSOCIATED BY INCLASS, SOURCE(t), AND REPLICATE(j)    */
+# /* 2 READ IN AGGREGATE EXPENDITURES FROM AGG DATASET                       */
+# /* 3 CALCULATE MEANS BY DIVIDING AGGREGATES BY CORRECT SOURCE POPULATIONS  */
+# /*   EXPENDITURES SOURCED FROM DIARY ARE CALULATED USING DIARY POPULATIONS */
+# /*   WHILE INTRVIEW EXPENDITURES USE INTERVIEW POPULATIONS                 */
+# /* 4 SUM EXPENDITURE MEANS PER UCC INTO CORRECT LINE ITEM AGGREGATIONS     */
+# /***************************************************************************/
+
+library(sqldf)	
+# create a character vector containing mean1, mean2, ... , mean45
+means <- paste0( "mean" , 1:45 )
+
+# merge the population and weighted aggregate data tables together
+avgs1 <- merge( pop , agg )
+
+# loop through all 45 weights..
+for ( i in 1:45 ){
+  # calculate the new 'mean##' variable by dividing the expenditure (rcost##) by the population (rpop##) variables
+  avgs1[ , means[ i ] ] <- ( avgs1[ , rcost[ i ] ] / avgs1[ , rpop[ i ] ] )
+  
+  # convert all missing (NA) mean values to zeroes
+  avgs1[ is.na( avgs1[ , means[ i ] ] ) , means[ i ] ] <- 0
+}
+
+# keep only a few columns, plus the 45 'mean##' columns
+avgs1 <- avgs1[ , c( "src" , "inclass" , "ucc" , means ) ]
+
+# partially build the sql string, sum each 'mean##' variable into the same column name, 'mean##'
+avgs.sums <- paste( "sum( " , means , ") as " , means , collapse = ", " )
+
+# merge on the 'line' column from the 'aggfmt' data frame
+avgs3 <- merge( avgs1 , aggfmt )
+
+# remove duplicate records from the data frame
+avgs3 <- sqldf( 'select distinct * from avgs3' )
+
+# construct the full sql string, grouping each sum by INCLASS (income class) and line (expenditure category)
+sql.avgs <- paste( "select INCLASS, line," , avgs.sums , "from avgs3 group by INCLASS, line" )
+
+# execute the sql string
+avgs2 <- sqldf( sql.avgs )
+
+## around line 666 in interview mean and se.R
 
 
 
