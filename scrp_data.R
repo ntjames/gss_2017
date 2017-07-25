@@ -77,17 +77,15 @@ a15<-clndat(age15)
 i15<-clndat(inc15)
 
   
-
 a14<-clndat(age14)
 
 ls()[grep("^[a-z]{1}[0-9]{2}$",ls())]
 
 #bind 
-plt<-bind_rows(a15,i15,a14) %>% arrange(yr,cuchar) %>% distinct()
+com_plt<-bind_rows(a15,i15,a14) %>% arrange(yr,cuchar) %>% distinct()
 
-
-
+save(com_plt,file=file.path(wd,"cache","com_plt.RData"))
   
-ggplot(filter(plt,cat1 %in% c("Food","Housing")), aes(cugrp,yr,cat1,Mean))+
+ggplot(filter(com_plt,cat1 %in% c("Food","Housing")), aes(cugrp,yr,cat1,Mean))+
   geom_point(mapping=aes(x=yr,y=Mean))
 
