@@ -17,9 +17,10 @@ load.project()
 
 #currently use only CESD PUMD Interview files
 if (0) {
-  # FMLI - CU characteristics, income, and summary level expenditures
-  # MEMI - member characteristics, income data
-  # MTBI - monthly expenditures at UCC level
+  # FMLI - CU characteristics, income, and summary level expenditures (1 record per CU)
+  # MEMI - member characteristics, income data 
+  # MTBI - monthly expenditures at UCC level (multiple records per CU - 
+  #                                         1 record per expenditure per month/year)
   # ITBI - income converted to monthly time frame
   # ITII - imputation variants of income converted to monthly time frame
   # NTAXI - fed. and state tax info
@@ -45,9 +46,7 @@ stub_rw<-1:nrow(stubfile0)
 w2<-stub_rw[stubfile0$type!=1] #wrap rows
 w1<-w2-1 # row above wrap row
 
-#head(stubfile0[sort(c(w1,w2)),])
 stubfile0[w1,"title"]<-paste(unlist(stubfile0[w1,"title"]),unlist(stubfile0[w2,"title"]))
-#head(stubfile0[sort(c(w1,w2)),])
 
 ## subset data (drop wrap rows, title rows, and ASSET and ADDENDA group),
 # create new line variable
