@@ -112,7 +112,59 @@ aggfmt <- subset( aggfmt2 , line != "" , select = c( "var_ucc" , "line" ) )
 aggfmt <- aggfmt[ order( aggfmt$var_ucc ) , ]
 
 
-## start at line 319 in interview mean and se.R
+## see around line 341 in interview mean and se.R
+
+fmli_files<-ls()[grep("fmli",ls())]
+
+#add file name as variable for each FMLI, then use separate to split into year and quarter
+fmli<-bind_rows(lapply(fmli_files, function(x) mutate(get(x),fileyrqtr=str_sub(x,5,8)  ))) %>%
+      separate(fileyrqtr,into=c("fileyear","fileqtr"),sep=2)
+
+#x<-str_sub(fmli_files,5,8) 
+#str_extract(x,"^[0-9]{2}")
+#str_split(x,"^[0-9]{2}")
+
+# delete all of the independent data frames from memory
+rm(list=fmli_files)
+
+# clear up RAM
+gc()
+
+
+# create a character vector containing 45 variable names (wtrep01, wtrep02, ... wtrep44 and finlwt21)
+wtrep <- c( paste0( "wtrep" , str_pad( 1:44 , 2 , pad = "0" ) ) , "finlwt21")
+
+# create a second character vector containing 45 variable names (repwt1, repwt2, .. repwt44, repwt45)
+repwt <- paste0( "repwt" , 1:45 )
+
+# create a third character vector that will be used to define which columns to keep
+f.d.vars <- c( wtrep , "mo_scope" , "inclass" , "newid" , "src" )
+
+# create a mo_scope variable in this large new family data frame
+fmli <-  transform(fmli,
+    mo_scope =
+      # first quarter should be interview month minus 1
+      ifelse( fileqtr %in% '1x' , as.numeric( qintrvmo ) - 1 ,
+      # final quarter (i.e. 5th quarter or 1st of next yr) should be 4 minus the interview month
+      ifelse( fileqtr %in% '1' , ( 4 - as.numeric( qintrvmo )  ) ,
+      # all other quarters should have a 3
+      3 ) ) ) %>%
+    mutate(src="I")  %>% # the source column for family records should be "I" (interview) throughout
+    select(f.d.vars) # keeping only the 45 wtrep columns, plus the additional four written above
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #explore EXPN (annual expenditure) files
