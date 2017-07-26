@@ -9,6 +9,7 @@ setwd(wd)
 #load ProjectTemplate ( http://projecttemplate.net )
 #see gss_2017/config/global.dcf for config. options (e.g., libraries, preprocessing)
 library(ProjectTemplate)
+library(readxl)
 
 load.project()
 
@@ -34,10 +35,74 @@ if (0) {
 }
 
 
+#read in data dictionary 
+stubpath<-file.path(getwd(),"stubdata")
+
+data_dic_vars<-read_excel(file.path(stubpath,"ce_pumd_interview_diary_dictionary.xlsx"), 
+                     sheet=2, col_names = TRUE, skip=2)
+
+data_dic_codes<-read_excel(file.path(stubpath,"ce_pumd_interview_diary_dictionary.xlsx"), 
+                          sheet=3, col_names = TRUE, skip=2)
+
+save(data_dic_vars,data_dic_codes,file=file.path(wd,"cache","dict.RData"))
+
+#filter(data_dic_codes,File=='FMLI',`Variable Name`=='RWATERPC')
+
+datafile<-"fmli"
+year<-"15"
+qtr<-"1x"
+var<-"childage"
+#var<-"rwaterpc"
+
+datafilenm<-toupper(datafile)
+varnm<-toupper(var)
+
+# filter & select data
+
+# file, year (& qtr) determines available vars to select
+## filter(fmli,fileyear=="16",fileqtr=="1") %>% select(childage,fileyear) %>% as.tibble()
+fdat<-filter(eval(parse(text=datafile)),fileyear==year,fileqtr==qtr) %>% select(var) %>% as.tibble()
+
+#determine var type
+vartype<-typeof(fdat[[1]])
+catvar<-switch(vartype,
+       character=TRUE,
+       integer=FALSE)
+
+# filter info from data dictionary
+## filter(data_dic_vars,File=='FMLI',`Variable Name`=='CHILDAGE')
+fdv<-filter(data_dic_vars,File==datafilenm,`Variable Name`==varnm)
+
+#filter info from codes (if applicable?)
+## filter(data_dic_codes,File=='FMLI',`Variable Name`=='CHILDAGE')
+if (catvar){
+fdc<-filter(data_dic_codes,File==datafilenm,`Variable Name`==varnm)
+
+fdat_fc<-factor(fdat[[1]],
+       levels=unlist(flatten(select(fdc,`Code Value`))),
+       labels=unlist(flatten(select(fdc,`Code Description`))))
+}
+
+## output
+
+#display data dict info
+data.frame(fdv)
+if(catvar){
+  data.frame(fdc)
+}
+
+#display summary
+if (catvar){
+  table(fdat_fc)
+} else {
+  summary(fdat[[1]])
+}
+
+
+
 ## STEP 1: READ IN THE STUB PARAMETER FILE AND CREATE FORMATS  
 #?  need to modify for multiple files?
-stubpath<-file.path(getwd(),"stubdata")
-stubfn<-dir(stubpath)
+stubfn<-dir(stubpath,"*.txt")
 
 #get wrapped rows, append X3 in wrapped row to X3 in previous row 
 stubfile0<-read_table(file.path(stubpath,stubfn), skip=1,
@@ -113,15 +178,28 @@ aggfmt <- aggfmt[ order( aggfmt$var_ucc ) , ]
 
 ## see around line 341 in interview mean and se.R
 
-fmli_files<-ls()[grep("fmli",ls())]
+fmli_files<-ls()[grep("fmli[0-9]",ls())]
 
 #add file name as variable for each FMLI, then use separate to split into year and quarter
 fmli<-bind_rows(lapply(fmli_files, function(x) mutate(get(x),fileyrqtr=str_sub(x,5,8)  ))) %>%
       separate(fileyrqtr,into=c("fileyear","fileqtr"),sep=2)
 
+save(fmli,file=file.path(wd,"cache","fmli.RData"))
+
 #x<-str_sub(fmli_files,5,8) 
 #str_extract(x,"^[0-9]{2}")
 #str_split(x,"^[0-9]{2}")
+
+#fmli keep
+fmli_kp <- c("newid","cuid","interi","qintrvmo","qintrvyr","hh_cu_q","bls_urbn","cutenure",
+             "fam_size","inc_rank","region","inclass","state","psu","age_ref","educ_ref",
+             "ref_race","sex_ref","hisp_ref","high_edu","totexppq","totexpcq","foodpq",
+             "foodcq","alcbevpq","alcbevcq","houspq","houscq","apparpq","apparcq",
+             "transpq","transcq","healthpq","healthcq","entertpq","entertcq","perscapq",
+             "perscacq","readpq","readcq","educapq","educacq","tobaccpq","tobacccq",
+             "miscpq","misccq","cashcopq","cashcocq","perinspq","perinscq","etotalp",
+             "etotalc","etotapx4","etotacx4")
+fmli_dat<-as.tibble(select(fmli,fmli_kp))
 
 # delete all of the independent data frames from memory
 rm(list=fmli_files)
