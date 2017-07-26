@@ -49,18 +49,32 @@ stubfile0[w1,"title"]<-paste(unlist(stubfile0[w1,"title"]),unlist(stubfile0[w2,"
 ## subset data (drop wrap rows, title rows, and ASSET and ADDENDA group),
 # create new line variable
 stubfile<-filter(stubfile0, type==1, source != "T",
-                 group %in% c("CUCHARS", "FOOD", "EXPEND", "INCOME"))
+          group %in% c("CUCHARS", "FOOD", "EXPEND", "INCOME")) %>% 
+          select(-c(type,factor)) %>% 
+          mutate(level=if_else(group=='INCOME',as.integer(level-1),level),
+                                lev1=if_else(level==1,title,NULL),
+                                lev2=if_else(level==2,title,NULL),
+                                lev3=if_else(level==3,title,NULL)) %>%
+          fill(lev1:lev3) %>% 
+          mutate(lev2=if_else(level!=1,lev2,NULL),lev3=if_else(level>=3,lev3,NULL)) 
 
 filter(stubfile,group!="CUCHARS",level<=2)
 filter(stubfile,group!="CUCHARS",level<=3)
 
-stubfilekp<-filter(stubfile,group!="CUCHARS",level<=2) %>% select(level,title,var_ucc,source,group)
+stubfilekp<-filter(stubfile,group!="CUCHARS",group!="INCOME"&level<=3|group=="INCOME"&level<=1)
 kp <-stubfilekp %>% select(title) %>% flatten() %>% unlist()
 
+din<-data.frame(select(a15,lev2,lev3))
+ulevs<-unique(a15$lev2)
+sublist<-lapply(ulevs, function(x) unique(subset(din,lev2==x,select=lev3,drop=T)))
+names(sublist)<-ulevs
+
+#add category before name i.e. Age: Under 25 years
+
 #ensure datasets have same names across years
-names(age13)<-names(age14)<-names(age15)
-names(inc13)<-names(inc14)<-names(inc15)
-names(reg13)<-names(reg14)<-names(reg15)
+names(age13)<-names(age14)<-names(age15) #<-gsub("\n"," ",names(age15))
+names(inc13)<-names(inc14)<-names(inc15) #<-gsub("\n"," ",names(inc15))
+names(reg13)<-names(reg14)<-names(reg15) #<-gsub("\n"," ",names(reg15))
 
 # function to clean datasets
 # remove lines above 50 (CU chars) and below 573 (addt'l tax, income)
