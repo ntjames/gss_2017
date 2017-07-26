@@ -8,6 +8,7 @@ wd<-switch(user,
 setwd(wd)
 
 load(file.path(wd,"cache","expn.RData"))
+load(file.path(wd,"cache","com_plt.RData"))
 
 library(shiny)
 library(plotly) # https://plot.ly/r/
