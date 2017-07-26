@@ -35,7 +35,7 @@ for (j in 1:nrow(readin)){
 
 # source in stubfile & use for filtering, etc. below
 stubpath<-file.path(getwd(),"stubdata")
-stubfn<-dir(stubpath)
+stubfn<-dir(stubpath,"*.txt")
 
 #get wrapped rows, append X3 in wrapped row to X3 in previous row 
 stubfile0<-read_table(file.path(stubpath,stubfn), skip=1,
