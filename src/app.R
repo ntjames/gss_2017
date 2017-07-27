@@ -18,6 +18,10 @@ library(DT)
 #load data
 load(file.path(wd,"cache","fmli.RData"))
 load(file.path(wd,"cache","dict.RData"))
+load(file.path(wd,"cache","com_plt.RData"))
+
+cats_t3<-filter(com_plt,level<=2) %>% select(cat1) %>% distinct() %>% flatten() %>% unlist()
+
 
 #### Define UI ####
 ui <- fluidPage(
@@ -66,16 +70,14 @@ navbarPage("Consumer Expenditure Data", selected="Descriptives", #temp make Desc
     sidebarLayout(
              
       sidebarPanel(
-        selectInput("variable_t2",
-                    "Choose a variable:",
-                    choices=c("a","b")),
+        selectInput("variable_t2","Choose a variable:", choices=c("a","b")),
         numericInput("obs_t2", "Number of observations to view:", 5)
       ),
              
       mainPanel(
         htmlOutput("summary_t2"),
         tableOutput("view_t2"),
-        plotOutput("distPlot_t2")
+        plotOutput("plot_t2")
       )
     ) # close sidebarLayout
   ), # close tab 2 input
@@ -83,19 +85,29 @@ navbarPage("Consumer Expenditure Data", selected="Descriptives", #temp make Desc
   ### Tab 3 input ###
   tabPanel("Annual",
     sidebarLayout(
-     
-      sidebarPanel(
-        selectInput("variable_t3",
-                   "Choose a variable:",
-                   choices=c("a","b")),
-        numericInput("obs_t3", "Number of observations to view:", 5)
+      sidebarPanel( 
+      dateRangeInput("year_t3","Year", start = "2013-01-01", end = "2015-12-31",
+                     min ="2005-01-01", max="2015-12-31", 
+                     startview="decade", format = "yyyy"),
+      selectInput("cat_t3","Category", 
+                  choices = cats_t3,
+                  multiple=TRUE, selected="Average annual expenditures"),
+      uiOutput("ui_t3"),
+      checkboxInput("showse_t3","Show SE"),
+      checkboxGroupInput("cuchar_t3", "CU category",
+                         c("All" = "all",
+                           "Age" = "age",
+                           "Income" = "inc",
+                           "Region" = "reg"),
+                         selected="all"),
+      actionButton("plotButton_t3", "Plot")
+      
      ),
      
      mainPanel(
-       htmlOutput("summary_t3"),
-       tableOutput("view_t3"),
-       plotOutput("distPlot_t3")
+       plotlyOutput("plot_t3")
      )
+    
    ) # close sidebarLayout
 ) # close tab 3 input
   
@@ -185,7 +197,7 @@ t1<-eventReactive(input$dispButton_t1,{
   out<-list(fdat_t1=fdat_t1,catvar_t1=catvar_t1,fdv_t1=fdv_t1)
   
   #filter info from codes (if cat) 
-  #!! check if filtered exists e.g. newid is char, but has no codes 
+  #!! newid is char, but has no codes & is super long
   #!! some vars in data_dic_codes aren't exactly same as variables
   #  (see e.g. BUILDING where dict needs to be padded to length 2 to match) 
   if (catvar_t1){
@@ -226,10 +238,8 @@ output$codes_t1 <- renderDataTable({
 output$summ_t1 <- renderTable({
   t1<-t1()
   if (t1$catvar_t1){
-    #tbl<-table(t1$fdat_fc_t1) %>% rename(foo=Var1)
     group_by(t1$fdat_t1[1],t1$fdat_fc_t1) %>% dplyr::summarize(Freq=n()) %>% 
       rename(Category=`t1$fdat_fc_t1`)
-   # str(tbl)
   } else { #!don't reverse order of t1 & t2 na.omit has weird residual behavior
     t2<-t1$fdat_t1[1] %>% dplyr::summarize(n=n(),`NA`= sum(is.na( eval(parse(text=isolate(input$var_t1))) )))
     t1<-summarize_all(na.exclude(t1$fdat_t1[1]),funs(min,mean,max,sd,IQR))   
@@ -250,7 +260,7 @@ output$plot_t1 <- renderPlot({
 })
   
 #use this to check input vals
- output$event <- renderPrint({
+output$event <- renderPrint({
    c(input$data_t1,
    input$year_t1,
    input$qtr_t1,
@@ -263,6 +273,53 @@ output$plot_t1 <- renderPlot({
 ### tab 3 outputs ###
     
 
+#dynamic UI  
+  output$ui_t3<-renderUI({
+    if (is.null(input$cat_t3))
+      return()
+   
+    #make and clean-up subcategory list
+    din<-data.frame(select(com_plt,lev2,lev3))
+    ulevs<-na.omit(unique(com_plt$lev2))
+    sublist<-lapply(ulevs, function(x) unique(subset(din,lev2==x,select=lev3,drop=T)))
+    names(sublist)<-ulevs
+    sublist<-lapply(sublist, function(x) x[!is.na(x)]) #rm NAs within lists
+    naonly<-sapply(sublist,function(x) all(is.na(x)) ) #rm items with only NA
+    sublist[naonly]<-NULL
+   
+   #keep items of sublist that match categories in input$cat
+   sublist2<-sublist[input$cat_t3]
+   if ( all( sapply(sublist2,function(x) all(is.null(x))) ) )
+     return()
+   
+   naonly2<-sapply(sublist2,function(x) all(is.null(x)) ) #rm items with only NULL
+   sublist2[naonly2]<-NULL
+   
+   selectInput("subcat_t3", "Expenditure subcategory:", sublist2 , multiple=TRUE)
+ })
+ 
+ # using ggplotly & eventReactive to only plot when all options set
+ plt<-eventReactive(input$plotButton_t3,{
+   
+   yrs<-year(input$year_t3)
+   filtered_plt<-filter(com_plt, cat1 %in% c(input$cat_t3,input$subcat_t3), 
+                        cuchar %in% input$cuchar_t3, 
+                        between(yr,yrs[1],yrs[2]))
+   
+   p<-ggplot(filtered_plt, aes(yr,Mean,group=interaction(cugrp,cat1),color=cugrp,linetype=cat1))+
+     geom_line() +  theme(legend.title=element_blank())
+   
+   if (input$showse_t3){
+     p<-p+geom_linerange(data=filtered_plt,aes(yr,ymin=Mean-SE,ymax=Mean+SE))
+   }
+   
+   ggplotly(p,tooltip=c("x","y","colour","linetype"),width=1000,height=700)
+ })
+ 
+ output$plot_t3 <- renderPlotly({
+   plt()
+ })
+ 
 
 } #close server
 
