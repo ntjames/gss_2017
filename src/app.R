@@ -1,6 +1,3 @@
-#
-# Inputting the different names of the datasets or variables? Choose
-#
 
 #set path depending on user
 user<-system2("whoami", stdout=TRUE)
@@ -16,9 +13,9 @@ library(magrittr)
 library(DT)
 
 #load data
-load(file.path(wd,"cache","fmli.RData"))
-load(file.path(wd,"cache","dict.RData"))
-load(file.path(wd,"cache","com_plt.RData"))
+load(file.path(wd,"cache","maj.RData")) # major datasets for tab1
+load(file.path(wd,"cache","dict.RData")) # data dictionary & codes
+load(file.path(wd,"cache","com_plt.RData")) # scraped combined tables plots
 
 cats_t3<-filter(com_plt,level<=2) %>% select(cat1) %>% distinct() %>% flatten() %>% unlist()
 
@@ -46,7 +43,7 @@ navbarPage("Consumer Expenditure Data", selected="Descriptives", #temp make Desc
       sidebarPanel(
         selectInput("data_t1",
                      "Choose a dataset:",
-                     choices=c("FMLI"="fmli","MEMI"="memi")),
+                     choices=c("FMLI"="fmli","MEMI"="memi","ITBI"="itbi")),
         uiOutput("ui_year_t1"),
         uiOutput("ui_qtr_t1"),
         uiOutput("ui_var_t1"),       
