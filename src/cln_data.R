@@ -51,8 +51,9 @@ save(data_dic_vars,data_dic_codes,file=file.path(wd,"cache","dict.RData"))
 datafile<-"fmli"
 year<-"15"
 qtr<-"1x"
-var<-"childage"
+#var<-"childage"
 #var<-"rwaterpc"
+var<-"building"
 
 datafilenm<-toupper(datafile)
 varnm<-toupper(var)
@@ -83,6 +84,8 @@ fdat_fc<-factor(fdat[[1]],
        labels=unlist(flatten(select(fdc,`Code Description`))))
 }
 
+str_pad( unlist(flatten(select(fdc,`Code Value`)),2,"right",pad="0")
+
 ## output
 
 #display data dict info
@@ -98,6 +101,11 @@ if (catvar){
   summary(fdat[[1]])
 }
 
+
+# ggplot(as.tibble(fdat_fc),aes(value))+geom_bar()
+ggplot(fdat,aes(eval(parse(text=var)))) + geom_density()
+
+select(data_dic_vars,contains("Flag")) %>% distinct() %>% p
 
 
 ## STEP 1: READ IN THE STUB PARAMETER FILE AND CREATE FORMATS  
