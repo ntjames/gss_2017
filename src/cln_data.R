@@ -11,15 +11,16 @@ setwd(wd)
 library(ProjectTemplate)
 library(readxl)
 
-load.project()
+#load.project()
 
 # don't perform munging  i.e. keep all data (e.g. diary and individual EXPN)
-# load.project(list('munging'=FALSE)) 
+ load.project(list('cache_loading'=FALSE,'munging'=FALSE)) 
 
 # only load cache
 # load.project(list('dat_loading'=FALSE,'munging'=FALSE)) 
 
 #currently use only CESD PUMD Interview files
+#! add major Diary files
 if (0) {
   # FMLI - CU characteristics, income, and summary level expenditures (1 record per CU)
   # MEMI - member characteristics, income data 
@@ -59,6 +60,22 @@ fmli<-bind_rows(lapply(fmli_files, function(x) mutate(get(x),fileyrqtr=str_sub(x
 
 save(fmli,file=file.path(wd,"cache","fmli.RData"))
 
+read_app<-function(pre){
+  pat<-paste0(pre,"[0-9]")
+  files<-ls(envir=.GlobalEnv)[grep(pat,ls(envir=.GlobalEnv))]
+    
+  #add file name as variable, then use separate to split into year and quarter
+  appfiles<-bind_rows(lapply(files, function(x) mutate(get(x),fileyrqtr=str_sub(x,5,8) ))) %>%
+    separate(fileyrqtr,into=c("fileyear","fileqtr"),sep=2)
+  assign(pre,appfiles, envir=.GlobalEnv)
+}
+
+read_app("fmli")
+
+majds<-list("fmli","memi","itbi")
+
+lapply(majds,read_app)
+
 # delete all of the independent data frames from memory
 # rm(list=fmli_files)
 
@@ -66,14 +83,8 @@ save(fmli,file=file.path(wd,"cache","fmli.RData"))
 gc()
 
 
+save(list=unlist(majds),file=file.path(wd,"cache","maj.RData"))
 
-
-
-
-# ggplot(as.tibble(fdat_fc),aes(value))+geom_bar()
-ggplot(fdat,aes(eval(parse(text=var)))) + geom_density()
-
-select(data_dic_vars,contains("Flag")) %>% distinct() %>% p
 
 
 ## STEP 1: READ IN THE STUB PARAMETER FILE AND CREATE FORMATS  
@@ -215,4 +226,7 @@ aggfmt <- aggfmt[ order( aggfmt$var_ucc ) , ]
 #   summary(fdat[[1]])
 # }
 # 
-
+# ggplot(as.tibble(fdat_fc),aes(value))+geom_bar()
+# ggplot(fdat,aes(eval(parse(text=var)))) + geom_density()
+# 
+# select(data_dic_vars,contains("Flag")) %>% distinct() %>% p
