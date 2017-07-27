@@ -3,14 +3,20 @@
 user<-system2("whoami", stdout=TRUE)
 wd<-switch(user,
            nathan=file.path("~/Dropbox/njames/school/PhD/misc/gss_2017"),
+		      'gosset\\nathan'=file.path("C:","Users","Nathan","Dropbox","njames","school","PhD","misc","gss_2017"),
            jacquelynneal=file.path("~jacquelynneal/Desktop/gss_2017"))
 setwd(wd)
 
+#source on surface
+#source(file.path(wd,"src","app.R"))
+
 #load libraries
-library(shiny)
 library(tidyverse)
-library(magrittr)
+library(lubridate)
+library(shiny)
+library(plotly)
 library(DT)
+#library(shinyjs)
 
 #load data
 load(file.path(wd,"cache","maj.RData")) # major datasets for tab1
@@ -19,14 +25,13 @@ load(file.path(wd,"cache","com_plt.RData")) # scraped combined tables plots
 
 cats_t3<-filter(com_plt,level<=2) %>% select(cat1) %>% distinct() %>% flatten() %>% unlist()
 
-
 #### Define UI ####
 ui <- fluidPage(
    
    # Application title
    #titlePanel("Consumer Expenditure Data"),
-   
-navbarPage("Consumer Expenditure Data", selected="Descriptives", #temp make Descriptives selected
+  # useShinyjs(),
+navbarPage("Consumer Expenditure Data", #selected="Descriptives", #temp make Descriptives selected
   
   ### Tab 0 input ###
   tabPanel("About",
@@ -53,8 +58,8 @@ navbarPage("Consumer Expenditure Data", selected="Descriptives", #temp make Desc
       
       mainPanel(
         tableOutput("var_t1"),
-        dataTableOutput("codes_t1"),
-        tableOutput("summ_t1"),
+      #  dataTableOutput("codes_t1"),
+        dataTableOutput("summ_t1"),
         plotOutput("plot_t1"),
         verbatimTextOutput("event")
       )
@@ -83,7 +88,7 @@ navbarPage("Consumer Expenditure Data", selected="Descriptives", #temp make Desc
   tabPanel("Annual",
     sidebarLayout(
       sidebarPanel( 
-      dateRangeInput("year_t3","Year", start = "2013-01-01", end = "2015-12-31",
+      dateRangeInput("year_t3","Year", start = "2012-01-01", end = "2015-12-31",
                      min ="2005-01-01", max="2015-12-31", 
                      startview="decade", format = "yyyy"),
       selectInput("cat_t3","Category", 
@@ -140,11 +145,11 @@ server <- function(input, output) {
   })
 
   output$ui_var_t1<-renderUI({
-    if (is.null(input$data_t1))
+    if (is.null(input$data_t1)|is.null(input$year_t1)|is.null(input$qtr_t1))
       return()
     
     # drop flag variables
-    flgvars<- select(data_dic_vars,contains("Flag")) %>% distinct() %>% pull() %>% tolower()
+    flgvars<- select(as.tibble(data_dic_vars),contains("Flag")) %>% distinct() %>% pull() %>% tolower()
       
     varvec<-filter(get(input$data_t1),fileyear==input$year_t1,fileqtr==input$qtr_t1) %>% 
       select(-one_of(flgvars)) %>% names()
@@ -186,10 +191,11 @@ t1<-eventReactive(input$dispButton_t1,{
                 double=FALSE,
                 logical=TRUE)
 
-  # filter info from data dictionary !!for current year
+  # filter info from data dictionary for current year
   fdv_t1<-filter(data_dic_vars,File==data_t1_upper ,`Variable Name`==var_t1_upper,
                 as.integer(paste0("20",input$year_t1))>=`First  Year`,
-                as.integer(paste0("20",input$year_t1))<=`Last  Year`)
+                as.integer(paste0("20",input$year_t1))<=`Last  Year`) %>%
+          select(-`Section Number`)
  
   out<-list(fdat_t1=fdat_t1,catvar_t1=catvar_t1,fdv_t1=fdv_t1)
   
@@ -205,6 +211,9 @@ t1<-eventReactive(input$dispButton_t1,{
             select(`Variable Name`,`Code Value`,`Code Description`)
   
     if (nrow(fdc_t1)>0) {
+      # fdat_fc_t1<-factor(fdat_t1[[1]],
+      #               levels=unlist(flatten(select(fdc_t1,`Code Value`))),
+      #               labels=unlist(flatten(select(fdc_t1,`Code Description`))))
       fdat_fc_t1<-factor(fdat_t1[[1]],
                     levels=unlist(flatten(select(fdc_t1,`Code Value`))),
                     labels=unlist(flatten(select(fdc_t1,`Code Description`))))
@@ -224,25 +233,23 @@ output$var_t1<-renderTable({
   t1$fdv_t1
 })  
   
-# if categorical var, display codes from data dictionary
-output$codes_t1 <- renderDataTable({
-  t1<-t1()
-  if(t1$catvar_t1){ df<-data.frame(t1$fdc_t1) 
-  }  else { return() }
-},rownames= FALSE)
-  
 #display summary
-output$summ_t1 <- renderTable({
+output$summ_t1 <- renderDataTable({
   t1<-t1()
   if (t1$catvar_t1){
-    group_by(t1$fdat_t1[1],t1$fdat_fc_t1) %>% dplyr::summarize(Freq=n()) %>% 
-      rename(Category=`t1$fdat_fc_t1`)
+    # group_by(t1$fdat_t1[1],t1$fdat_fc_t1) %>% dplyr::summarize(Freq=n()) %>% 
+    #   dplyr::rename(Category=`t1$fdat_fc_t1`)
+    group_by(t1$fdat_t1[1],t1$fdat_fc_t1) %>% dplyr::summarize(Freq=n()) %>%
+      dplyr::rename(Category=`t1$fdat_fc_t1`) %>%
+      full_join(.,t1$fdc_t1,by=c("Category"="Code Description")) %>%
+      select("Variable Name","Code Value",Category,Freq)
+    
   } else { #!don't reverse order of t1 & t2 na.omit has weird residual behavior
     t2<-t1$fdat_t1[1] %>% dplyr::summarize(n=n(),`NA`= sum(is.na( eval(parse(text=isolate(input$var_t1))) )))
     t1<-summarize_all(na.exclude(t1$fdat_t1[1]),funs(min,mean,max,sd,IQR))   
-    c(t1,t2)
+    as.tibble(c(t1,t2))
   }
-})
+},rownames= FALSE)
    
 #display plot
 output$plot_t1 <- renderPlot({
