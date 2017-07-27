@@ -9,22 +9,34 @@ library(tidyverse)
 library(readxl)
 
 yrs<-c("2015","2014","2013")
+yrs2<-c("2012")
+yrs3<-c("2011","2010","2009","2008","2007","2006","2005")
 grp<-c("age","income","region")
+
 
 #download data (only need to dl once)
 
-#url <- "https://www.bls.gov/cex/2015/combined/age.xlsx"
-#download.file(url, file.path(wd,"scraped","2015age.xlsx"), mode="wb")
-
 dl_links<-as.vector(outer(yrs,grp, 
                 FUN=function(x,y) paste0("https://www.bls.gov/cex/",x,"/combined/",y,".xlsx")))
-
 dl_paths<-as.vector(outer(yrs,grp, FUN=function(x,y) file.path(wd,"scraped",paste0(x,y,".xlsx") ) ))
-                
+
+dl_links2<-as.vector(outer(yrs2,grp, 
+                          FUN=function(x,y) paste0("https://www.bls.gov/cex/",x,"/combined/",y,".xls")))
+dl_paths2<-as.vector(outer(yrs2,grp, FUN=function(x,y) file.path(wd,"scraped",paste0(x,y,".xls") ) ))
+
+
+dl_links3m<-as.vector(outer(yrs3,grp, 
+                           FUN=function(x,y) paste0("https://www.bls.gov/cex/",x,"/Standard/",y,".xls")))
+dl_paths3m<-as.vector(outer(yrs3,grp, FUN=function(x,y) file.path(wd,"scraped",paste0(x,y,"_mn.xls") ) ))
+
+
 #mapply(function(x,y,...) download.file(url=x, destfile=y,...), dl_links, dl_paths ,MoreArgs = list(mode="wb") )
+#mapply(function(x,y,...) download.file(url=x, destfile=y,...), dl_links2, dl_paths2 ,MoreArgs = list(mode="wb") )
+mapply(function(x,y,...) download.file(url=x, destfile=y,...), dl_links3m, dl_paths3m ,MoreArgs = list(mode="wb") )
 
 #read scraped data
-readin<-cbind(expand.grid(yrs,grp),dl_paths,stringsAsFactors=FALSE)
+readin<-cbind(rbind(expand.grid(yrs,grp),expand.grid(yrs2,grp),expand.grid(yrs3,grp)),
+              c(dl_paths,dl_paths2,dl_paths3m),stringsAsFactors=FALSE)
 
 for (j in 1:nrow(readin)){
   yr<-substr(readin[j,1],3,4)
@@ -34,6 +46,8 @@ for (j in 1:nrow(readin)){
 }
 
 # source in stubfile & use for filtering, etc. below
+#! pull stub files from multiple years to get spellings, etc.
+#! e.g. Health care in 2012 v Healthcare 2013-2015
 stubpath<-file.path(getwd(),"stubdata")
 stubfn<-dir(stubpath,"*.txt")
 
@@ -58,23 +72,26 @@ stubfile<-filter(stubfile0, type==1, source != "T",
           fill(lev1:lev3) %>% 
           mutate(lev2=if_else(level!=1,lev2,NULL),lev3=if_else(level>=3,lev3,NULL)) 
 
-filter(stubfile,group!="CUCHARS",level<=2)
-filter(stubfile,group!="CUCHARS",level<=3)
+#filter(stubfile,group!="CUCHARS",level<=2)
+#filter(stubfile,group!="CUCHARS",level<=3)
 
 stubfilekp<-filter(stubfile,group!="CUCHARS",group!="INCOME"&level<=3|group=="INCOME"&level<=1)
 kp <-stubfilekp %>% select(title) %>% flatten() %>% unlist()
 
-din<-data.frame(select(a15,lev2,lev3))
-ulevs<-unique(a15$lev2)
-sublist<-lapply(ulevs, function(x) unique(subset(din,lev2==x,select=lev3,drop=T)))
-names(sublist)<-ulevs
+# din<-data.frame(select(a15,lev2,lev3))
+# ulevs<-unique(a15$lev2)
+# sublist<-lapply(ulevs, function(x) unique(subset(din,lev2==x,select=lev3,drop=T)))
+# names(sublist)<-ulevs
 
-#add category before name i.e. Age: Under 25 years
+#! add category before name i.e. Age: Under 25 years
 
 #ensure datasets have same names across years
-names(age13)<-names(age14)<-names(age15) #<-gsub("\n"," ",names(age15))
-names(inc13)<-names(inc14)<-names(inc15) #<-gsub("\n"," ",names(inc15))
-names(reg13)<-names(reg14)<-names(reg15) #<-gsub("\n"," ",names(reg15))
+#! function?
+ls()[grep("[a-z]{3}[0-9]{2}",ls())]
+
+names(age11)<-names(age12)<-names(age13)<-names(age14)<-names(age15) #<-gsub("\n"," ",names(age15))
+names(inc11)<-names(inc12)<-names(inc13)<-names(inc14)<-names(inc15) #<-gsub("\n"," ",names(inc15))
+names(reg11)<-names(reg12)<-names(reg13)<-names(reg14)<-names(reg15) #<-gsub("\n"," ",names(reg15))
 
 # function to clean datasets
 # remove lines above 50 (CU chars) and below 573 (addt'l tax, income)
@@ -83,7 +100,7 @@ names(reg13)<-names(reg14)<-names(reg15) #<-gsub("\n"," ",names(reg15))
 # keep selected values, tidy, merge on stubfile
 clndat<-function(cesdat){
   nm<-deparse(substitute(cesdat))
-  outdat<-slice(cesdat,51:643) %>% 
+  outdat<-slice(cesdat,51:643) %>%  ##!! need way to determine stopping point w/o hardcode (Addenda?) 
     mutate(t1=is.na(.[,1]),ldt1=lead(t1),lagt1=lag(t1),
          t2=is.na(.[,2]),ldt2=lead(t2),lagt2=lag(t2),
          drop=ldt1 & lagt1 & t2 & ldt2 & lagt2,
@@ -104,7 +121,36 @@ clndat<-function(cesdat){
   mutate(yr=as.integer(paste0("20",yr)), Mean=as.numeric(Mean),SE=as.numeric(SE))  
 }
 
+#clean pre- 2011
+
+outdat<-slice(age11,43:185) %>%  ##!! need way to determine stopping point w/o hardcode (Addenda?) 
+  mutate(t1=is.na(.[,1]),ldt1=lead(t1),lagt1=lag(t1),
+         t2=is.na(.[,2]),ldt2=lead(t2),lagt2=lag(t2),
+         drop=ldt1 & lagt1 & t2 & ldt2 & lagt2,
+         lonerow=!t2 & ldt2 & lagt2 %in% c(NA,T))  %>%
+  filter(!drop,!t2) %>%
+  mutate(Item=paste(Item,"Mean")) %>%
+  select(names(age11)) %>% #!
+  gather("cugrp","val",-1) %>%
+  separate(Item,c("cat1","stat"), sep="[ ](?=[^ ]+$)") %>% 
+  filter(cat1 %in% kp) %>%
+  spread(stat,val) %>%  mutate(in_nm = "age11") %>% #!
+  separate(in_nm,c("cuchar","yr"),sep=3) %>%
+  mutate(cuchar=if_else(cugrp=="All\nconsumer\nunits","all",cuchar)) %>%
+  left_join(y=stubfilekp,by=c("cat1"="title")) 
+
+ #! need to read and add on SE
+  %>% mutate(yr=as.integer(paste0("20",yr)), Mean=as.numeric(Mean),SE=as.numeric(SE))  
+
+
+
+
 # clean data
+# function/loop ?
+a12<-clndat(age12)
+i12<-clndat(inc12)
+r12<-clndat(reg12)
+
 a13<-clndat(age13)
 i13<-clndat(inc13)
 r13<-clndat(reg13)
@@ -116,6 +162,12 @@ r14<-clndat(reg14)
 a15<-clndat(age15)
 i15<-clndat(inc15)
 r15<-clndat(reg15)
+
+#check diff
+a12cats<-select(a12,cat1) %>% distinct() %>% pull()
+a13cats<-select(a13,cat1) %>% distinct() %>% pull()
+
+union(a12cats,a13cats) - intersect(a12cats,a13cats) 
 
 #list of datasets to bind
 bd<-as.list(ls()[grep("^[a-z]{1}[0-9]{2}$",ls())])
