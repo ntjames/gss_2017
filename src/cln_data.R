@@ -70,66 +70,6 @@ gc()
 
 
 
-#filter(data_dic_codes,File=='FMLI',`Variable Name`=='RWATERPC')
-
-datafile<-"fmli"
-year<-"15"
-qtr<-"1x"
-#var<-"childage"
-#var<-"rwaterpc"
-var<-"division"
-
-datafilenm<-toupper(datafile)
-varnm<-toupper(var)
-
-# filter & select data
-
-# file, year (& qtr) determines available vars to select
-## filter(fmli,fileyear=="16",fileqtr=="1") %>% select(childage,fileyear) %>% as.tibble()
-fdat<-filter(eval(parse(text=datafile)),fileyear==year,fileqtr==qtr) %>% select(var) %>% as.tibble()
-
-#determine var type
-vartype<-typeof(fdat[[1]])
-catvar<-switch(vartype,
-       character=TRUE,
-       integer=FALSE)
-
-# filter info from data dictionary
-## filter(data_dic_vars,File=='FMLI',`Variable Name`=='CHILDAGE')
-fdv<-filter(data_dic_vars,File==datafilenm,`Variable Name`==varnm)
-
-#filter info from codes (if applicable?)
-## filter(data_dic_codes,File=='FMLI',`Variable Name`=='CHILDAGE')
-if (catvar){
-fdc<-filter(data_dic_codes,File==datafilenm,`Variable Name`==varnm)
-
-fdat_fc<-factor(fdat[[1]],
-       levels=unlist(flatten(select(fdc,`Code Value`))),
-       labels=unlist(flatten(select(fdc,`Code Description`))))
-}
-
-#check if min number of chars in fdat[[1]] matches min number in dictionary
-# if not pad dictionary
-
-#check if dictionary has more than 10 categories if yes, then pad to max length
-str_pad( unlist(flatten(select(fdc,`Code Value`))),2,"left",pad="0") 
-
-## output
-
-#display data dict info
-data.frame(fdv)
-if(catvar){
-  data.frame(fdc)
-}
-
-#display summary
-if (catvar){
-  table(fdat_fc)
-} else {
-  summary(fdat[[1]])
-}
-
-
 # ggplot(as.tibble(fdat_fc),aes(value))+geom_bar()
 ggplot(fdat,aes(eval(parse(text=var)))) + geom_density()
 
@@ -210,3 +150,69 @@ aggfmt <- subset( aggfmt2 , line != "" , select = c( "var_ucc" , "line" ) )
 
 # re-order the data frame by UCC
 aggfmt <- aggfmt[ order( aggfmt$var_ucc ) , ]
+
+
+
+#scratch below
+
+# 
+# #filter(data_dic_codes,File=='FMLI',`Variable Name`=='RWATERPC')
+# 
+# datafile<-"fmli"
+# year<-"15"
+# qtr<-"1x"
+# #var<-"childage"
+# #var<-"rwaterpc"
+# var<-"division"
+# 
+# datafilenm<-toupper(datafile)
+# varnm<-toupper(var)
+# 
+# # filter & select data
+# 
+# # file, year (& qtr) determines available vars to select
+# ## filter(fmli,fileyear=="16",fileqtr=="1") %>% select(childage,fileyear) %>% as.tibble()
+# fdat<-filter(eval(parse(text=datafile)),fileyear==year,fileqtr==qtr) %>% select(var) %>% as.tibble()
+# 
+# #determine var type
+# vartype<-typeof(fdat[[1]])
+# catvar<-switch(vartype,
+#        character=TRUE,
+#        integer=FALSE)
+# 
+# # filter info from data dictionary
+# ## filter(data_dic_vars,File=='FMLI',`Variable Name`=='CHILDAGE')
+# fdv<-filter(data_dic_vars,File==datafilenm,`Variable Name`==varnm)
+# 
+# #filter info from codes (if applicable?)
+# ## filter(data_dic_codes,File=='FMLI',`Variable Name`=='CHILDAGE')
+# if (catvar){
+# fdc<-filter(data_dic_codes,File==datafilenm,`Variable Name`==varnm)
+# 
+# fdat_fc<-factor(fdat[[1]],
+#        levels=unlist(flatten(select(fdc,`Code Value`))),
+#        labels=unlist(flatten(select(fdc,`Code Description`))))
+# }
+# 
+# #check if min number of chars in fdat[[1]] matches min number in dictionary
+# # if not pad dictionary
+# 
+# #check if dictionary has more than 10 categories if yes, then pad to max length
+# str_pad( unlist(flatten(select(fdc,`Code Value`))),2,"left",pad="0") 
+# 
+# ## output
+# 
+# #display data dict info
+# data.frame(fdv)
+# if(catvar){
+#   data.frame(fdc)
+# }
+# 
+# #display summary
+# if (catvar){
+#   table(fdat_fc)
+# } else {
+#   summary(fdat[[1]])
+# }
+# 
+
