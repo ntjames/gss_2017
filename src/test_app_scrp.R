@@ -70,7 +70,6 @@ server <- function(input, output) {
     selectInput("subcat", "Expenditure subcategory:", sublist2 , multiple=TRUE)
   })
   
-  
   # using ggplotly & eventReactive to only plot when all options set
   plt<-eventReactive(input$plotButton,{
     
@@ -90,7 +89,6 @@ server <- function(input, output) {
     # append category name in from of cugrp  
     # fix margins, axes, legends of plot
 
-
     ggplotly(p,tooltip=c("x","y","colour","linetype"),width=1000,height=700)
   })
   
@@ -103,14 +101,11 @@ server <- function(input, output) {
   #  year(input$yr)
   # })
   
-
 }
 
 
 shinyApp(ui, server)
 
-
 #filter(com_plt, cat1 %in% "Average annual expenditures", cuchar %in% "inc")
-
 #ggplot(filter(com_plt, cat1 %in% c("Average annual expenditures"), cuchar %in% c("reg","all")), 
 #       aes(yr,Mean,group=interaction(cugrp,cat1),color=cat1,linetype=cugrp) )+ geom_line()

@@ -16,6 +16,9 @@ load.project()
 # don't perform munging  i.e. keep all data (e.g. diary and individual EXPN)
 # load.project(list('munging'=FALSE)) 
 
+# only load cache
+# load.project(list('dat_loading'=FALSE,'munging'=FALSE)) 
+
 #currently use only CESD PUMD Interview files
 if (0) {
   # FMLI - CU characteristics, income, and summary level expenditures (1 record per CU)
@@ -46,6 +49,27 @@ data_dic_codes<-read_excel(file.path(stubpath,"ce_pumd_interview_diary_dictionar
 
 save(data_dic_vars,data_dic_codes,file=file.path(wd,"cache","dict.RData"))
 
+## read-in major datasets, append
+
+fmli_files<-ls()[grep("fmli[0-9]",ls())]
+
+#add file name as variable for each FMLI, then use separate to split into year and quarter
+fmli<-bind_rows(lapply(fmli_files, function(x) mutate(get(x),fileyrqtr=str_sub(x,5,8)  ))) %>%
+  separate(fileyrqtr,into=c("fileyear","fileqtr"),sep=2)
+
+save(fmli,file=file.path(wd,"cache","fmli.RData"))
+
+# delete all of the independent data frames from memory
+# rm(list=fmli_files)
+
+# clear up RAM
+gc()
+
+
+
+
+
+
 #filter(data_dic_codes,File=='FMLI',`Variable Name`=='RWATERPC')
 
 datafile<-"fmli"
@@ -53,7 +77,7 @@ year<-"15"
 qtr<-"1x"
 #var<-"childage"
 #var<-"rwaterpc"
-var<-"building"
+var<-"division"
 
 datafilenm<-toupper(datafile)
 varnm<-toupper(var)
@@ -84,7 +108,11 @@ fdat_fc<-factor(fdat[[1]],
        labels=unlist(flatten(select(fdc,`Code Description`))))
 }
 
-str_pad( unlist(flatten(select(fdc,`Code Value`)),2,"right",pad="0")
+#check if min number of chars in fdat[[1]] matches min number in dictionary
+# if not pad dictionary
+
+#check if dictionary has more than 10 categories if yes, then pad to max length
+str_pad( unlist(flatten(select(fdc,`Code Value`))),2,"left",pad="0") 
 
 ## output
 
@@ -182,21 +210,3 @@ aggfmt <- subset( aggfmt2 , line != "" , select = c( "var_ucc" , "line" ) )
 
 # re-order the data frame by UCC
 aggfmt <- aggfmt[ order( aggfmt$var_ucc ) , ]
-
-
-## see around line 341 in interview mean and se.R
-
-fmli_files<-ls()[grep("fmli[0-9]",ls())]
-
-#add file name as variable for each FMLI, then use separate to split into year and quarter
-fmli<-bind_rows(lapply(fmli_files, function(x) mutate(get(x),fileyrqtr=str_sub(x,5,8)  ))) %>%
-      separate(fileyrqtr,into=c("fileyear","fileqtr"),sep=2)
-
-save(fmli,file=file.path(wd,"cache","fmli.RData"))
-
-# delete all of the independent data frames from memory
-rm(list=fmli_files)
-
-# clear up RAM
-gc()
-
