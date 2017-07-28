@@ -58,7 +58,7 @@ navbarPage("Consumer Expenditure Data", # selected="Descriptives", #make Descrip
         uiOutput("ui_var_t1"),       
       #  numericInput("obs_t1", "Number of observations to view:", 5),
         actionButton("dispButton_t1", "Display")
-      ),
+      ,width=3),
       
       mainPanel(
         uiOutput("h1"),
@@ -69,7 +69,7 @@ navbarPage("Consumer Expenditure Data", # selected="Descriptives", #make Descrip
         plotOutput("plot_t1"),
       #  plotlyOutput("plot_t1"),
         verbatimTextOutput("event")
-      )
+      ,width=9)
       
     ) #close sidebarLayout 
   ), #close tab 1 input
@@ -92,7 +92,7 @@ navbarPage("Consumer Expenditure Data", # selected="Descriptives", #make Descrip
   
   ### Tab 3 input ###
   tabPanel("Annual",
-   tags$head(tags$style(HTML(".multicol{font-size:12px;
+   tags$head(tags$style(HTML(".multicol{font-size:16px;
                           height:auto;
                           -webkit-column-count: 2;
                           -moz-column-count: 2;
@@ -101,7 +101,7 @@ navbarPage("Consumer Expenditure Data", # selected="Descriptives", #make Descrip
     sidebarLayout(
       sidebarPanel( 
       dateRangeInput("year_t3","Year", start = "2012-01-01", end = "2015-12-31",
-                     min ="2005-01-01", max="2015-12-31", 
+                     min ="2012-01-01", max="2015-12-31", 
                      startview="decade", format = "yyyy"),
       selectInput("cat_t3","Category", 
                   choices = cats_t3,
@@ -125,11 +125,11 @@ navbarPage("Consumer Expenditure Data", # selected="Descriptives", #make Descrip
        ),
       actionButton("plotButton_t3", "Plot")
       
-     ),
+     ,width=2),
      
      mainPanel(
        plotlyOutput("plot_t3")
-     )
+     ,width=10)
     
    ) # close sidebarLayout
 ) # close tab 3 input
@@ -289,13 +289,13 @@ output$plot_t1 <- renderPlot({
   if (t1$catvar_t1){
     ggplot(as.tibble(t1$fdat_fc_t1),aes(value))+geom_bar()+
       theme(axis.text.x = element_text(angle = 30, hjust = 1),
-            axis.text=element_text(size=12),
-            axis.title=element_text(size=14,face="bold")) + 
+            axis.text=element_text(size=14),
+            axis.title=element_text(size=16,face="bold")) + 
       labs(x="Category")
   } else {
     ggplot(t1$fdat_t1,aes(eval(parse(text=isolate(input$var_t1))) )) + geom_density() +
-      theme(axis.text=element_text(size=12),
-            axis.title=element_text(size=14,face="bold")) + labs(x="")
+      theme(axis.text=element_text(size=14),
+            axis.title=element_text(size=16,face="bold")) + labs(x="")
   }
   
 })
@@ -316,8 +316,8 @@ output$plot_t1 <- renderPlot({
 
 #dynamic UI  
   output$ui_t3<-renderUI({
-    if (is.null(input$cat_t3))
-      return()
+   # if (is.null(input$cat_t3))
+   #  return()
    
     #make and clean-up subcategory list
     din<-data.frame(select(com_plt,lev2,lev3))
@@ -329,7 +329,8 @@ output$plot_t1 <- renderPlot({
     sublist[naonly]<-NULL
    
    #keep items of sublist that match categories in input$cat ??
-   sublist2<-sublist[input$cat_t3]
+ #  sublist2<-sublist[input$cat_t3]
+    sublist2<-sublist
    if ( all( sapply(sublist2,function(x) all(is.null(x))) ) )
      return()
    
@@ -348,13 +349,20 @@ output$plot_t1 <- renderPlot({
                         between(yr,yrs[1],yrs[2]))
    
    p<-ggplot(filtered_plt, aes(yr,Mean,group=interaction(cugrp,cat1),color=cugrp,linetype=cat1))+
-     geom_line() + theme(legend.title=element_blank()) + labs(x="Year",y="Mean ($)")
+     geom_line()+ labs(x="Year",y="Mean ($)") + 
+     theme(legend.title=element_blank(),
+           legend.text=element_text(size=12),
+           axis.text=element_text(size=14),
+           axis.title=element_text(size=16,face="bold"),
+           axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))
+           ) 
    
    if (input$showse_t3){
      p<-p+geom_linerange(data=filtered_plt,aes(yr,ymin=Mean-SE,ymax=Mean+SE))
    }
    
-   ggplotly(p,tooltip=c("x","y","colour","linetype"),width=1000,height=700)
+   ggplotly(p,tooltip=c("x","y","colour","linetype"),width=1400,height=700)
+   
  })
  
  output$plot_t3 <- renderPlotly({

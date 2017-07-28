@@ -142,8 +142,40 @@ rm(list=ls()[grep("ten[0-9]{2}",ls())])
 rm(ds)
 
 #hotfix 2015 filenames to correct all filenames
-names(rac15)<-gsub("and all","&",names(rac15))
-names(rac15)<-gsub(" a/","",names(rac15))
+
+#race
+names(rac15)<-gsub("All\nconsumer\nunits","All CUs",names(rac15)) %>% gsub("\n","",.) %>%
+gsub("White and all other races, and Asian","White, Asian &\n all other",.) %>%
+gsub("orAfr","or Afr",.) %>% gsub("andall","& other",.) %>%
+gsub("otherraces ","",.) %>% gsub(" a/","",.)
+
+#education
+names(edu15)<-gsub("All\nconsumer\nunits","All CUs",names(edu15)) %>% gsub("\n"," ",.) %>%
+  gsub("graduate","grad",.) %>% gsub("[hH]igh school","HS",.) %>% gsub("with","w/",.) %>%
+  gsub("[cC]ollege grad","College",.) %>% 
+    gsub("Master's, professional, doctoral degree","Graduate degree",.)
+
+#CU size
+names(cus15)<-gsub("All\nconsumer\nunits","All CUs",names(cus15)) %>% gsub("\n"," ",.) %>%
+  gsub("people$","ppl",.)
+
+#age
+names(age15)<-gsub("All\nconsumer\nunits","All CUs",names(age15)) %>% gsub("\n"," ",.) %>%
+  gsub("Under 25 years","24 years and younger",.)
+
+#housing tenure
+names(hou15)<- gsub("All\nconsumer\nunits","All CUs",names(hou15)) %>% gsub("\n"," ",.) %>%
+   gsub(" Home- owner "," ",.) %>% gsub("without","w/o",.) %>% gsub("with","w/",.)
+
+#type of area
+names(toa15)<-gsub("All\nconsumer\nunits","All CUs",names(toa15)) %>% gsub("\n"," ",.)
+
+#income
+names(qui15)<-gsub("All\nconsumer\nunits","All CUs",names(qui15)) %>% gsub("\n"," ",.) %>%
+  gsub(" percent","%",.)
+
+#region
+names(reg15)<-gsub("All\nconsumer\nunits","All CUs",names(reg15))
 
 #ensure datasets have same names across years
 cuchars<-c("age","cus","edu","hou","qui","rac","reg","toa")
@@ -185,12 +217,11 @@ clndat<-function(cesdat){
   filter(cat1 %in% kp) %>%
   spread(stat,val) %>%  mutate(in_nm = nm) %>% #!
   separate(in_nm,c("cuchar","yr"),sep=3) %>%  #!
-  mutate(cuchar=if_else(cugrp=="All\nconsumer\nunits","all",cuchar)) %>%
-  left_join(y=stubfilekp,by=c("cat1"="title")) %>%
+#  mutate(cuchar=if_else(cugrp=="All\nconsumer\nunits","all",cuchar)) %>%
+      mutate(cuchar=if_else(cugrp=="All CUs","all",cuchar)) %>%
+      left_join(y=stubfilekp,by=c("cat1"="title")) %>%
   mutate(yr=as.integer(paste0("20",yr)), Mean=as.numeric(Mean),SE=as.numeric(SE))  
 }
-
-#a12<-clndat("age12")
 
 #for 2012 change "Health care" to "Healthcare" to match other files
 for (i in cuchars) {
@@ -245,9 +276,6 @@ save(com_plt,file=file.path(wd,"cache","com_plt.RData"))
 #  geom_point(mapping=aes(x=yr,y=Mean))
 
 
-
-
-
 if (0) {
 ## Process data before 2012 ##
 
@@ -279,9 +307,6 @@ outdat<-slice(age11,43:185) %>%  ##!! need way to determine stopping point w/o h
 # ! need to read and add on SE
 #  %>% mutate(yr=as.integer(paste0("20",yr)), Mean=as.numeric(Mean),SE=as.numeric(SE))  
 }
-
-
-
 
 
 
