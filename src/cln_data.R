@@ -52,13 +52,13 @@ save(data_dic_vars,data_dic_codes,file=file.path(wd,"cache","dict.RData"))
 
 ## read-in major datasets, append
 
-fmli_files<-ls()[grep("fmli[0-9]",ls())]
+# fmli_files<-ls()[grep("fmli[0-9]",ls())]
 
 #add file name as variable for each FMLI, then use separate to split into year and quarter
-fmli<-bind_rows(lapply(fmli_files, function(x) mutate(get(x),fileyrqtr=str_sub(x,5,8)  ))) %>%
-  separate(fileyrqtr,into=c("fileyear","fileqtr"),sep=2)
+#fmli<-bind_rows(lapply(fmli_files, function(x) mutate(get(x),fileyrqtr=str_sub(x,5,8)  ))) %>%
+#  separate(fileyrqtr,into=c("fileyear","fileqtr"),sep=2)
 
-save(fmli,file=file.path(wd,"cache","fmli.RData"))
+#save(fmli,file=file.path(wd,"cache","fmli.RData"))
 
 read_app<-function(pre){
   pat<-paste0(pre,"[0-9]")
@@ -74,7 +74,7 @@ read_app("fmli")
 
 majds<-list("fmli","memi","itbi")
 
-lapply(majds,read_app)
+tmp<-lapply(majds,read_app)
 
 # delete all of the independent data frames from memory
 # rm(list=fmli_files)
