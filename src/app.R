@@ -46,9 +46,13 @@ navbarPage("Consumer Expenditure Data", selected="Descriptives", #temp make Desc
     sidebarLayout(
       
       sidebarPanel(
-        selectInput("data_t1",
-                     "Choose a dataset:",
-                     choices=c("FMLI"="fmli","MEMI"="memi","ITBI"="itbi")),
+        selectInput("data_t1", "Choose a dataset:",
+                     choices=list(
+                            Interview=c("FMLI"="fmli","MEMI"="memi","MTBI"="mtbi", "ITBI"="itbi",
+                               "ITII"="itii","NTAXI"="ntaxi","FPAR"="fpar","MCHI"="mchi"),
+                            Diary=c("FMLD"="fmld","MEMD"="memd","DTBD"="dtbd","EXPD"="expd",
+                                    "DTID"="dtid") 
+                              )),
         uiOutput("ui_year_t1"),
         uiOutput("ui_qtr_t1"),
         uiOutput("ui_var_t1"),       
@@ -63,6 +67,7 @@ navbarPage("Consumer Expenditure Data", selected="Descriptives", #temp make Desc
         dataTableOutput("summ_t1"),
         uiOutput("h3"),
         plotOutput("plot_t1"),
+      #  plotlyOutput("plot_t1"),
         verbatimTextOutput("event")
       )
       
@@ -72,12 +77,10 @@ navbarPage("Consumer Expenditure Data", selected="Descriptives", #temp make Desc
   ### Tab 2 input ### 
   # tabPanel("Quarterly",
   #   sidebarLayout(
-  #            
   #     sidebarPanel(
   #       selectInput("variable_t2","Choose a variable:", choices=c("a","b")),
   #       numericInput("obs_t2", "Number of observations to view:", 5)
   #     ),
-  #            
   #     mainPanel(
   #       htmlOutput("summary_t2"),
   #       tableOutput("view_t2"),
@@ -86,8 +89,15 @@ navbarPage("Consumer Expenditure Data", selected="Descriptives", #temp make Desc
   #   ) # close sidebarLayout
   # ), # close tab 2 input
   
+  
   ### Tab 3 input ###
   tabPanel("Annual",
+   tags$head(tags$style(HTML(".multicol{font-size:12px;
+                          height:auto;
+                          -webkit-column-count: 2;
+                          -moz-column-count: 2;
+                          column-count: 2;
+                          }"))),
     sidebarLayout(
       sidebarPanel( 
       dateRangeInput("year_t3","Year", start = "2012-01-01", end = "2015-12-31",
@@ -98,18 +108,22 @@ navbarPage("Consumer Expenditure Data", selected="Descriptives", #temp make Desc
                   multiple=TRUE, selected="Average annual expenditures"),
       uiOutput("ui_t3"),
       checkboxInput("showse_t3","Show SE"),
-      checkboxGroupInput("cuchar_t3", "CU category",
+      
+      tags$div(align = "left", 
+       class = "multicol",
+        checkboxGroupInput("cuchar_t3", "CU category",
                          c("All" = "all",
                            "Age" = "age",
                            "Race"="qqqqqqqq",
                            "Education"="iiiiii",
                            "Size of CU"="bbbbbb",
-                           "Income" = "inc",
+                          # "Income" = "inc",
                            "Income (Quintiles)"="aaaaa",
                            "Region" = "reg",
                            "Housing Tenure"="ccccc",
                            "Area Type"="dddddd"),
-                         selected="all",inline=FALSE),
+                         selected="all")
+       ),
       actionButton("plotButton_t3", "Plot")
       
      ),
@@ -269,19 +283,19 @@ output$h3<-renderUI({
   h3("Plot")
 })
 
+#output$plot_t1 <- renderPlotly({
 output$plot_t1 <- renderPlot({
   t1<-t1()
   if (t1$catvar_t1){
     ggplot(as.tibble(t1$fdat_fc_t1),aes(value))+geom_bar()+
       theme(axis.text.x = element_text(angle = 30, hjust = 1),
-            axis.text=element_text(size=16),
-            axis.title=element_text(size=18,face="bold")) + 
+            axis.text=element_text(size=12),
+            axis.title=element_text(size=14,face="bold")) + 
       labs(x="Category")
   } else {
     ggplot(t1$fdat_t1,aes(eval(parse(text=isolate(input$var_t1))) )) + geom_density() +
-      theme(axis.text=element_text(size=16),
-            axis.title=element_text(size=18,face="bold")) + 
-      labs(x="")
+      theme(axis.text=element_text(size=12),
+            axis.title=element_text(size=14,face="bold")) + labs(x="")
   }
   
 })
