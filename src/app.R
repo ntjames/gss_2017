@@ -31,7 +31,7 @@ ui <- fluidPage(
    # Application title
    #titlePanel("Consumer Expenditure Data"),
   # useShinyjs(),
-navbarPage("Consumer Expenditure Data", selected="Descriptives", #temp make Descriptives selected
+navbarPage("Consumer Expenditure Data", # selected="Descriptives", #make Descriptives selected
   
   ### Tab 0 input ###
   tabPanel("About",
@@ -271,7 +271,8 @@ output$summ_t1 <- DT::renderDataTable({
       select("Code Value",Category,Freq)
   } else { #!don't reverse order of t1 & t2 na.omit has weird residual behavior
     t2<-t1$fdat_t1[1] %>% dplyr::summarize(n=n(),`NA`= sum(is.na( eval(parse(text=isolate(input$var_t1))) )))
-    t1<-summarize_all(na.exclude(t1$fdat_t1[1]),funs(min,mean,median,max,sd,IQR))   
+    t1<-summarize_all(na.exclude(t1$fdat_t1[1]),funs(min,mean=round(mean(.),2),
+                                                     median,max,sd=round(sd(.),3),IQR))   
     as.tibble(c(t1,t2)) # %>% formatRound('mean',3)
   }
 },rownames= FALSE)
