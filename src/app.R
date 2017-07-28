@@ -114,14 +114,13 @@ navbarPage("Consumer Expenditure Data", selected="Descriptives", #temp make Desc
         checkboxGroupInput("cuchar_t3", "CU category",
                          c("All" = "all",
                            "Age" = "age",
-                           "Race"="qqqqqqqq",
-                           "Education"="iiiiii",
-                           "Size of CU"="bbbbbb",
-                          # "Income" = "inc",
-                           "Income (Quintiles)"="aaaaa",
+                           "Race"="rac",
+                           "Education"="edu",
+                           "Size of CU"="cus",
+                           "Income (Quintiles)"="qui",
                            "Region" = "reg",
-                           "Housing Tenure"="ccccc",
-                           "Area Type"="dddddd"),
+                           "Housing Tenure"="hou",
+                           "Area Type"="toa"),
                          selected="all")
        ),
       actionButton("plotButton_t3", "Plot")
@@ -328,7 +327,7 @@ output$plot_t1 <- renderPlot({
     naonly<-sapply(sublist,function(x) all(is.na(x)) ) #rm items with only NA
     sublist[naonly]<-NULL
    
-   #keep items of sublist that match categories in input$cat
+   #keep items of sublist that match categories in input$cat ??
    sublist2<-sublist[input$cat_t3]
    if ( all( sapply(sublist2,function(x) all(is.null(x))) ) )
      return()
@@ -348,7 +347,7 @@ output$plot_t1 <- renderPlot({
                         between(yr,yrs[1],yrs[2]))
    
    p<-ggplot(filtered_plt, aes(yr,Mean,group=interaction(cugrp,cat1),color=cugrp,linetype=cat1))+
-     geom_line() +  theme(legend.title=element_blank()) + labs(x="Year",y="Mean ($)")
+     geom_line() + theme(legend.title=element_blank()) + labs(x="Year",y="Mean ($)")
    
    if (input$showse_t3){
      p<-p+geom_linerange(data=filtered_plt,aes(yr,ymin=Mean-SE,ymax=Mean+SE))
