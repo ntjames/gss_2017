@@ -31,7 +31,7 @@ ui <- fluidPage(
    # Application title
    #titlePanel("Consumer Expenditure Data"),
   # useShinyjs(),
-navbarPage("Consumer Expenditure Data", #selected="Descriptives", #temp make Descriptives selected
+navbarPage("Consumer Expenditure Data", selected="Descriptives", #temp make Descriptives selected
   
   ### Tab 0 input ###
   tabPanel("About",
@@ -57,9 +57,11 @@ navbarPage("Consumer Expenditure Data", #selected="Descriptives", #temp make Des
       ),
       
       mainPanel(
+        uiOutput("h1"),
         tableOutput("var_t1"),
-      #  dataTableOutput("codes_t1"),
+        uiOutput("h2"),
         dataTableOutput("summ_t1"),
+        uiOutput("h3"),
         plotOutput("plot_t1"),
         verbatimTextOutput("event")
       )
@@ -68,21 +70,21 @@ navbarPage("Consumer Expenditure Data", #selected="Descriptives", #temp make Des
   ), #close tab 1 input
   
   ### Tab 2 input ### 
-  tabPanel("Quarterly",
-    sidebarLayout(
-             
-      sidebarPanel(
-        selectInput("variable_t2","Choose a variable:", choices=c("a","b")),
-        numericInput("obs_t2", "Number of observations to view:", 5)
-      ),
-             
-      mainPanel(
-        htmlOutput("summary_t2"),
-        tableOutput("view_t2"),
-        plotOutput("plot_t2")
-      )
-    ) # close sidebarLayout
-  ), # close tab 2 input
+  # tabPanel("Quarterly",
+  #   sidebarLayout(
+  #            
+  #     sidebarPanel(
+  #       selectInput("variable_t2","Choose a variable:", choices=c("a","b")),
+  #       numericInput("obs_t2", "Number of observations to view:", 5)
+  #     ),
+  #            
+  #     mainPanel(
+  #       htmlOutput("summary_t2"),
+  #       tableOutput("view_t2"),
+  #       plotOutput("plot_t2")
+  #     )
+  #   ) # close sidebarLayout
+  # ), # close tab 2 input
   
   ### Tab 3 input ###
   tabPanel("Annual",
@@ -99,9 +101,15 @@ navbarPage("Consumer Expenditure Data", #selected="Descriptives", #temp make Des
       checkboxGroupInput("cuchar_t3", "CU category",
                          c("All" = "all",
                            "Age" = "age",
+                           "Race"="qqqqqqqq",
+                           "Education"="iiiiii",
+                           "Size of CU"="bbbbbb",
                            "Income" = "inc",
-                           "Region" = "reg"),
-                         selected="all"),
+                           "Income (Quintiles)"="aaaaa",
+                           "Region" = "reg",
+                           "Housing Tenure"="ccccc",
+                           "Area Type"="dddddd"),
+                         selected="all",inline=FALSE),
       actionButton("plotButton_t3", "Plot")
       
      ),
@@ -171,7 +179,6 @@ server <- function(input, output) {
     selectInput("var_t1", "Choose a variable:", varlist)
   })  
   
-    
 # display button reactive  
 t1<-eventReactive(input$dispButton_t1,{
     
@@ -194,8 +201,8 @@ t1<-eventReactive(input$dispButton_t1,{
   # filter info from data dictionary for current year
   fdv_t1<-filter(data_dic_vars,File==data_t1_upper ,`Variable Name`==var_t1_upper,
                 as.integer(paste0("20",input$year_t1))>=`First  Year`,
-                as.integer(paste0("20",input$year_t1))<=`Last  Year`) %>%
-          select(-`Section Number`)
+                as.integer(paste0("20",input$year_t1))<=`Last  Year`) 
+            # %>% select(-`Section Number`)
  
   out<-list(fdat_t1=fdat_t1,catvar_t1=catvar_t1,fdv_t1=fdv_t1)
   
@@ -211,9 +218,6 @@ t1<-eventReactive(input$dispButton_t1,{
             select(`Variable Name`,`Code Value`,`Code Description`)
   
     if (nrow(fdc_t1)>0) {
-      # fdat_fc_t1<-factor(fdat_t1[[1]],
-      #               levels=unlist(flatten(select(fdc_t1,`Code Value`))),
-      #               labels=unlist(flatten(select(fdc_t1,`Code Description`))))
       fdat_fc_t1<-factor(fdat_t1[[1]],
                     levels=unlist(flatten(select(fdc_t1,`Code Value`))),
                     labels=unlist(flatten(select(fdc_t1,`Code Description`))))
@@ -228,48 +232,67 @@ out
   
 
 # display data dictionary variable info
+output$h1<-renderUI({
+  t<-t1() 
+  h3("Data Dictionary")
+  })
+
 output$var_t1<-renderTable({
   t1<-t1()
   t1$fdv_t1
-})  
+},digits=0)  
   
 #display summary
-output$summ_t1 <- renderDataTable({
+output$h2<-renderUI({
+  t<-t1() 
+  h3("Summary")
+})
+
+output$summ_t1 <- DT::renderDataTable({
   t1<-t1()
   if (t1$catvar_t1){
-    # group_by(t1$fdat_t1[1],t1$fdat_fc_t1) %>% dplyr::summarize(Freq=n()) %>% 
-    #   dplyr::rename(Category=`t1$fdat_fc_t1`)
     group_by(t1$fdat_t1[1],t1$fdat_fc_t1) %>% dplyr::summarize(Freq=n()) %>%
       dplyr::rename(Category=`t1$fdat_fc_t1`) %>%
       full_join(.,t1$fdc_t1,by=c("Category"="Code Description")) %>%
-      select("Variable Name","Code Value",Category,Freq)
-    
+      #select("Variable Name","Code Value",Category,Freq)
+      select("Code Value",Category,Freq)
   } else { #!don't reverse order of t1 & t2 na.omit has weird residual behavior
     t2<-t1$fdat_t1[1] %>% dplyr::summarize(n=n(),`NA`= sum(is.na( eval(parse(text=isolate(input$var_t1))) )))
-    t1<-summarize_all(na.exclude(t1$fdat_t1[1]),funs(min,mean,max,sd,IQR))   
-    as.tibble(c(t1,t2))
+    t1<-summarize_all(na.exclude(t1$fdat_t1[1]),funs(min,mean,median,max,sd,IQR))   
+    as.tibble(c(t1,t2)) # %>% formatRound('mean',3)
   }
 },rownames= FALSE)
    
 #display plot
+output$h3<-renderUI({
+  t<-t1() 
+  h3("Plot")
+})
+
 output$plot_t1 <- renderPlot({
   t1<-t1()
   if (t1$catvar_t1){
     ggplot(as.tibble(t1$fdat_fc_t1),aes(value))+geom_bar()+
-      theme(axis.text.x = element_text(angle = 30, hjust = 1))
+      theme(axis.text.x = element_text(angle = 30, hjust = 1),
+            axis.text=element_text(size=16),
+            axis.title=element_text(size=18,face="bold")) + 
+      labs(x="Category")
   } else {
-    ggplot(t1$fdat_t1,aes(eval(parse(text=isolate(input$var_t1))) )) + geom_density()
+    ggplot(t1$fdat_t1,aes(eval(parse(text=isolate(input$var_t1))) )) + geom_density() +
+      theme(axis.text=element_text(size=16),
+            axis.title=element_text(size=18,face="bold")) + 
+      labs(x="")
   }
   
 })
   
 #use this to check input vals
-output$event <- renderPrint({
-   c(input$data_t1,
-   input$year_t1,
-   input$qtr_t1,
-   input$var_t1)
- })
+# output$event <- renderPrint({
+#    c(input$data_t1,
+#    input$year_t1,
+#    input$qtr_t1,
+#    input$var_t1)
+#  })
 
 ### tab 2 outputs ###
 
@@ -311,7 +334,7 @@ output$event <- renderPrint({
                         between(yr,yrs[1],yrs[2]))
    
    p<-ggplot(filtered_plt, aes(yr,Mean,group=interaction(cugrp,cat1),color=cugrp,linetype=cat1))+
-     geom_line() +  theme(legend.title=element_blank())
+     geom_line() +  theme(legend.title=element_blank()) + labs(x="Year",y="Mean ($)")
    
    if (input$showse_t3){
      p<-p+geom_linerange(data=filtered_plt,aes(yr,ymin=Mean-SE,ymax=Mean+SE))
