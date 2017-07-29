@@ -36,8 +36,39 @@ navbarPage("Consumer Expenditure Data", # selected="Descriptives", #make Descrip
   ### Tab 0 input ###
   tabPanel("About",
          h1( 'Data Challenge 2017'), h3('Government Statistics Section'),
+         a(strong('Consumer Expenditure Data'),href='a(https://www.bls.gov/cex/'), 
+HTML(paste('The Consumer Expenditure Surveys (CE) program provides data on expenditures, 
+income, and demographic characteristics of consumers in the United States. 
+Data are provided in tables, databases, news releases, reports, and public-use microdata files. Data are 
+collected by the Census Bureau for BLS in two surveys, the Interview Survey for 
+           major items and the Diary Survey for more
+           frequently purchased items. CE data are primarily used to revise the 
+           Consumer Price Index. The CE is the only Federal household survey to 
+           provide information on the complete range of consumer expenditures 
+           and incomes, as well as the characteristics of those consumers. 
+           Researchers and government agencies also use CE data to study consumers 
+           spending habits and trends.',tags$sup(1))),
+
+         br(),
+         br(),
+         strong('Data Challenge'),
          p('For the GSS Data Challenge, we were interested in exploring the possibilities of
-           interactive exploratory data analysis. FILL IN MORE HERE')
+           interactive exploratory data analysis. As we dug into the data, we were overwhelmed by
+           the sheer amount. Asking ourselves what we would want if we were beginning to explore the 
+           data for a statistical analysis, we decided to build an interactive data dictionary and basic
+           plotting mechanism for preliminary visualizations.'),
+         strong('Interactive Data Dictionary'), 
+         p('This tab allows the user to load several of the largest datasets and
+         explore variable names and values over time. We were limited by size and 
+         space constraints, as we are running everything locally and using open-source
+         tools. Without space and computing constraints, this tool would allow other files
+         to be explored.' ),
+         strong('Visualization'), 
+         p('This tab allows the user to view the annual averages from 2013 onward.
+           The CES data underwent a change in the way it was reported in 2012; in the future
+           we would update with additional years after reformatting.' ),
+         br(),
+         p(paste('1: '),a('https://www.bls.gov/cex/',href='https://www.bls.gov/cex/'))
   ), #close tab 0
   
   ### Tab 1 input ###
