@@ -56,7 +56,6 @@ navbarPage("Consumer Expenditure Data", # selected="Descriptives", #make Descrip
         uiOutput("ui_year_t1"),
         uiOutput("ui_qtr_t1"),
         uiOutput("ui_var_t1"),       
-      #  numericInput("obs_t1", "Number of observations to view:", 5),
         actionButton("dispButton_t1", "Display")
       ,width=3),
       
@@ -67,7 +66,6 @@ navbarPage("Consumer Expenditure Data", # selected="Descriptives", #make Descrip
         dataTableOutput("summ_t1"),
         uiOutput("h3"),
         plotOutput("plot_t1"),
-      #  plotlyOutput("plot_t1"),
         verbatimTextOutput("event")
       ,width=9)
       
@@ -75,20 +73,7 @@ navbarPage("Consumer Expenditure Data", # selected="Descriptives", #make Descrip
   ), #close tab 1 input
   
   ### Tab 2 input ### 
-  # tabPanel("Quarterly",
-  #   sidebarLayout(
-  #     sidebarPanel(
-  #       selectInput("variable_t2","Choose a variable:", choices=c("a","b")),
-  #       numericInput("obs_t2", "Number of observations to view:", 5)
-  #     ),
-  #     mainPanel(
-  #       htmlOutput("summary_t2"),
-  #       tableOutput("view_t2"),
-  #       plotOutput("plot_t2")
-  #     )
-  #   ) # close sidebarLayout
-  # ), # close tab 2 input
-  
+  #  removed
   
   ### Tab 3 input ###
   tabPanel("Annual",
@@ -142,7 +127,7 @@ server <- function(input, output) {
   
 ### tab 1 outputs ###
 
-#dynamic UI  
+# dynamic UI  
   output$ui_year_t1<-renderUI({
     if (is.null(input$data_t1))
       return()
@@ -215,7 +200,6 @@ t1<-eventReactive(input$dispButton_t1,{
   fdv_t1<-filter(data_dic_vars,File==data_t1_upper ,`Variable Name`==var_t1_upper,
                 as.integer(paste0("20",input$year_t1))>=`First  Year`,
                 as.integer(paste0("20",input$year_t1))<=`Last  Year`) 
-            # %>% select(-`Section Number`)
  
   out<-list(fdat_t1=fdat_t1,catvar_t1=catvar_t1,fdv_t1=fdv_t1)
   
@@ -243,7 +227,6 @@ t1<-eventReactive(input$dispButton_t1,{
 out 
 })
   
-
 # display data dictionary variable info
 output$h1<-renderUI({
   t<-t1() 
@@ -267,13 +250,12 @@ output$summ_t1 <- DT::renderDataTable({
     group_by(t1$fdat_t1[1],t1$fdat_fc_t1) %>% dplyr::summarize(Freq=n()) %>%
       dplyr::rename(Category=`t1$fdat_fc_t1`) %>%
       full_join(.,t1$fdc_t1,by=c("Category"="Code Description")) %>%
-      #select("Variable Name","Code Value",Category,Freq)
       select("Code Value",Category,Freq)
   } else { #!don't reverse order of t1 & t2 na.omit has weird residual behavior
     t2<-t1$fdat_t1[1] %>% dplyr::summarize(n=n(),`NA`= sum(is.na( eval(parse(text=isolate(input$var_t1))) )))
     t1<-summarize_all(na.exclude(t1$fdat_t1[1]),funs(min,mean=round(mean(.),2),
                                                      median,max,sd=round(sd(.),3),IQR))   
-    as.tibble(c(t1,t2)) # %>% formatRound('mean',3)
+    as.tibble(c(t1,t2))
   }
 },rownames= FALSE)
    
@@ -283,15 +265,13 @@ output$h3<-renderUI({
   h3("Plot")
 })
 
-#output$plot_t1 <- renderPlotly({
 output$plot_t1 <- renderPlot({
   t1<-t1()
   if (t1$catvar_t1){
     ggplot(as.tibble(t1$fdat_fc_t1),aes(value))+geom_bar()+
       theme(axis.text.x = element_text(angle = 30, hjust = 1),
             axis.text=element_text(size=14),
-            axis.title=element_text(size=16,face="bold")) + 
-      labs(x="Category")
+            axis.title=element_text(size=16,face="bold")) + labs(x="Category")
   } else {
     ggplot(t1$fdat_t1,aes(eval(parse(text=isolate(input$var_t1))) )) + geom_density() +
       theme(axis.text=element_text(size=14),
@@ -314,10 +294,8 @@ output$plot_t1 <- renderPlot({
 ### tab 3 outputs ###
     
 
-#dynamic UI  
+# dynamic UI  
   output$ui_t3<-renderUI({
-   # if (is.null(input$cat_t3))
-   #  return()
    
     #make and clean-up subcategory list
     din<-data.frame(select(com_plt,lev2,lev3))
