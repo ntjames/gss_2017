@@ -100,8 +100,8 @@ navbarPage("Consumer Expenditure Data", # selected="Descriptives", #make Descrip
                           }"))),
     sidebarLayout(
       sidebarPanel( 
-      dateRangeInput("year_t3","Year", start = "2012-01-01", end = "2015-12-31",
-                     min ="2012-01-01", max="2015-12-31", 
+      dateRangeInput("year_t3","Year", start = "2011-01-01", end = "2015-12-31",
+                     min ="2011-01-01", max="2015-12-31", 
                      startview="decade", format = "yyyy"),
       selectInput("cat_t3","Category", 
                   choices = cats_t3,

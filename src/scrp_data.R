@@ -10,9 +10,10 @@ library(tidyverse)
 library(readxl)
 library(stringr)
 
-## Process data for 2012 - 2015 ##
+## Process data for 2011 - 2015 ##
 yrs<-c("2015","2014","2013")
 yrs2<-c("2012")
+yrs3<-c("2011")
 grp<-c("age","race","educat","cusize","quintile","region","tenure")
 
 # CESD links and local paths
@@ -24,13 +25,18 @@ dl_links2<-as.vector(outer(yrs2,grp,
                           FUN=function(x,y) paste0("https://www.bls.gov/cex/",x,"/combined/",y,".xls")))
 dl_paths2<-as.vector(outer(yrs2,grp, FUN=function(x,y) file.path(wd,"scraped",paste0(x,y,".xls") ) ))
 
+dl_links3<-as.vector(outer(yrs3,grp, 
+                           FUN=function(x,y) paste0("https://www.bls.gov/cex/",x,"/stnderror/",y,".xls")))
+dl_paths3<-as.vector(outer(yrs3,grp, FUN=function(x,y) file.path(wd,"scraped",paste0(x,y,".xls") ) ))
+
 #download data (only need to dl once)
 #mapply(function(x,y,...) download.file(url=x, destfile=y,...), dl_links, dl_paths ,MoreArgs = list(mode="wb") )
 #mapply(function(x,y,...) download.file(url=x, destfile=y,...), dl_links2, dl_paths2 ,MoreArgs = list(mode="wb") )
+#mapply(function(x,y,...) download.file(url=x, destfile=y,...), dl_links3, dl_paths3 ,MoreArgs = list(mode="wb") )
 
 #read scraped data
-readin<-cbind(rbind(expand.grid(yrs,grp),expand.grid(yrs2,grp)),
-              c(dl_paths,dl_paths2),stringsAsFactors=FALSE)
+readin<-cbind(rbind(expand.grid(yrs,grp),expand.grid(yrs2,grp),expand.grid(yrs3,grp)),
+              c(dl_paths,dl_paths2,dl_paths3),stringsAsFactors=FALSE)
 
 for (j in 1:nrow(readin)){
   yr<-substr(readin[j,1],3,4)
@@ -39,9 +45,8 @@ for (j in 1:nrow(readin)){
   assign(nm,read_excel(readin[j,3], col_names = TRUE, skip=2))
 }
 
+
 # source in stubfile & use for filtering, etc. below
-#! pull stub files from multiple years to get spellings, etc.
-#! e.g. Health care in 2012 v Healthcare 2013-2015
 stubpath<-file.path(getwd(),"stubdata")
 stubfn<-dir(stubpath,"*.txt")
 
@@ -102,9 +107,12 @@ newnm<-gsub(": NA","",paste(nm,ds[1,],sep=": "))
 newnm
 }
 
+#names(edu11)
+#names(edu12)
+
 # fix educat, cusize, and race colnames
 for (i in c("edu","cus","rac")){
-  for (j in 12:15){
+  for (j in 11:15){
     dsc<-paste0(i,j)
     ds<-get(dsc) #temp dataset
     names(ds)<-fixnames(ds)
@@ -112,8 +120,11 @@ for (i in c("edu","cus","rac")){
   }
 }  
 
+#names(edu11)
+#names(edu12)
+
 #make housing tenure and type of are datasets from each ten dataset
-for (j in 12:15){
+for (j in 11:15){
   assign(paste0("hou",j), select( get(paste0("ten",j)) ,1:6 ))
   assign(paste0("toa",j), select( get(paste0("ten",j)) ,1:2,7:10 ))
 }
@@ -125,9 +136,12 @@ prefixname<-function(ds){
 names(ds)
 }
 
+names(toa11)
+names(toa12)
+
 # fix type of area and housing tenure file colnames
 for (i in c("toa","hou")){
-  for (j in 12:15){
+  for (j in 11:15){
     dsc<-paste0(i,j)
     ds<-get(dsc) #temp dataset
     names(ds)<-prefixname(ds) 
@@ -136,6 +150,9 @@ for (i in c("toa","hou")){
     assign(dsc,ds) #assign back to dataset
   }
 }  
+
+names(toa11)
+names(toa12)
 
 #drop tenure datasets and temp ds dataset
 rm(list=ls()[grep("ten[0-9]{2}",ls())])
@@ -182,13 +199,26 @@ cuchars<-c("age","cus","edu","hou","qui","rac","reg","toa")
 for (i in cuchars) {
     lastdsc<-paste0(i,"15")
     lastds<-get(lastdsc)
-  for (j in 12:14){
+  for (j in 11:14){
     dsc<-paste0(i,j)
     ds<-get(dsc) #temp dataset
     names(ds)<-names(lastds)
     assign(dsc,ds) #assign back to dataset
   }
 }
+
+#select(age11,Item) %>% add_rownames() %>%
+#  filter(Item=="Average annual expenditures")
+
+#first row
+#which(edu11$Item == "Average annual expenditures")
+#which(get("edu11")$Item == "Average annual expenditures")
+
+
+#last row
+#which(edu11$Item == "Addenda:")-1
+#which(get("edu11")$Item == "Addenda:")-1
+
 
 # print names to check
 # lapply(ls()[grep("[a-z]{3}[0-9]{2}",ls())], function(x) names(get(x)))
@@ -201,7 +231,9 @@ for (i in cuchars) {
 clndat<-function(cesdat){
   # nm<-deparse(substitute(cesdat))
   nm<-cesdat
-  outdat<-slice(get(cesdat),51:643) %>%  ##!! determine stopping point w/o hardcode? (Addenda?) 
+  firstrow<-which(get(cesdat)$Item == "Average annual expenditures")
+  lastrow<-which(get(cesdat)$Item == "Addenda:")-1
+  outdat<-slice(get(cesdat),firstrow:lastrow) %>%  ##!! determine stopping point w/o hardcode? (Addenda?) 
     mutate(t1=is.na(.[,1]),ldt1=lead(t1),lagt1=lag(t1),
          t2=is.na(.[,2]),ldt2=lead(t2),lagt2=lag(t2),
          drop=ldt1 & lagt1 & t2 & ldt2 & lagt2,
@@ -223,18 +255,24 @@ clndat<-function(cesdat){
   mutate(yr=as.integer(paste0("20",yr)), Mean=as.numeric(Mean),SE=as.numeric(SE))  
 }
 
-#for 2012 change "Health care" to "Healthcare" to match other files
+a11<-clndat("age11")
+a12<-clndat("age12")
+
+#change section below to include files before 2012
+#for 2012 (and before??) change "Health care" to "Healthcare" to match other files
 for (i in cuchars) {
-    dsc<-paste0(i,"12")
+  for (j in 11:12){
+    dsc<-paste0(i,j)
     ds<-get(dsc) #temp dataset
     ds<-mutate(ds,Item=if_else(Item=="Health care","Healthcare",Item))
     assign(dsc,ds) #assign back to dataset
+  }
 }
 
 #change "Personal taxes (missing values not imputed)" (2012)
 # and "Personal taxes (contains some imputed values)" (2013-2015) to  "Personal taxes"
 for (i in cuchars) {
-  for (j in 12:15){
+  for (j in 11:15){
     dsc<-paste0(i,j)
     ds<-get(dsc) #temp dataset
     ds<-mutate(ds,Item=if_else(str_sub(Item,1,14)=="Personal taxes","Personal taxes",Item))
@@ -252,7 +290,7 @@ stubfilekp<-mutate(stubfilekp,
 
 # clean data
 for (i in cuchars) {
-  for (j in 12:15){
+  for (j in 11:15){
     dsn<-paste0(str_sub(i,1,2),j)
     ds<-clndat( paste0(i,j) )
     assign(dsn,ds) #assign back to dataset
@@ -270,7 +308,7 @@ com_plt<-bind_rows(bdl) %>% arrange(yr,cuchar) %>% distinct()
 #check cuchars are correct 
 # select(com_plt, cuchar) %>% table()
 
-save(com_plt,file=file.path(wd,"cache","com_plt.RData"))
+## save(com_plt,file=file.path(wd,"cache","com_plt.RData"))
   
 #ggplot(filter(com_plt,cat1 %in% c("Food","Housing")), aes(cugrp,yr,cat1,Mean))+
 #  geom_point(mapping=aes(x=yr,y=Mean))
@@ -279,12 +317,31 @@ save(com_plt,file=file.path(wd,"cache","com_plt.RData"))
 if (0) {
 ## Process data before 2012 ##
 
-# yrs3<-c("2011","2010")
+yrs3<-c("2011")
 
 #dl_links3m<-as.vector(outer(yrs3,grp, 
 #                           FUN=function(x,y) paste0("https://www.bls.gov/cex/",x,"/Standard/",y,".xls")))
+
 #dl_paths3m<-as.vector(outer(yrs3,grp, FUN=function(x,y) file.path(wd,"scraped",paste0(x,y,"_mn.xls") ) ))
+
+dl_links3<-as.vector(outer(yrs3,grp, 
+                            FUN=function(x,y) paste0("https://www.bls.gov/cex/",x,"/stnderror/",y,".xls")))
+
+dl_paths3<-as.vector(outer(yrs3,grp, FUN=function(x,y) file.path(wd,"scraped",paste0(x,y,"_se.xls") ) ))
+
 #mapply(function(x,y,...) download.file(url=x, destfile=y,...), dl_links3m, dl_paths3m ,MoreArgs = list(mode="wb") )
+mapply(function(x,y,...) download.file(url=x, destfile=y,...), dl_links3, dl_paths3 ,MoreArgs = list(mode="wb") )
+
+readin2<-cbind(rbind(expand.grid(yrs3,grp)),
+              c(dl_paths3),stringsAsFactors=FALSE)
+
+for (j in 1:nrow(readin2)){
+  yr<-substr(readin2[j,1],3,4)
+  var<-substr(readin2[j,2],1,3)
+  nm<-paste0(var,yr)
+  assign(nm,read_excel(readin2[j,3], col_names = TRUE, skip=2))
+}
+
 
 #clean pre- 2012
 
@@ -313,6 +370,16 @@ outdat<-slice(age11,43:185) %>%  ##!! need way to determine stopping point w/o h
 
 
 ## scratch below
+
+# readin2<-cbind(rbind(expand.grid(yrs3,grp)),
+#                c(dl_paths3),stringsAsFactors=FALSE)
+# 
+# for (j in 1:nrow(readin2)){
+#   yr<-substr(readin2[j,1],3,4)
+#   var<-substr(readin2[j,2],1,3)
+#   nm<-paste0(var,yr)
+#   assign(nm,read_excel(readin2[j,3], col_names = TRUE, skip=2))
+# }
 
 # nmfx<-grep("X",names(edu15))
 # chkseq<-seq(min(nmfx)-1,max(nmfx))
