@@ -72,7 +72,7 @@ collected by the Census Bureau for BLS in two surveys, the Interview Survey for
   ), #close tab 0
   
   ### Tab 1 input ###
-  tabPanel("Descriptives",
+  tabPanel("Interactive Data Dictionary",
    # Sidebar with a slider input for number of bins 
     sidebarLayout(
       
@@ -86,7 +86,8 @@ collected by the Census Bureau for BLS in two surveys, the Interview Survey for
                               )),
         uiOutput("ui_year_t1"),
         uiOutput("ui_qtr_t1"),
-        uiOutput("ui_var_t1"),       
+        uiOutput("ui_var_t1"), 
+        uiOutput("ui_contopt_t1"), 
         actionButton("dispButton_t1", "Display")
       ,width=3),
       
@@ -94,10 +95,11 @@ collected by the Census Bureau for BLS in two surveys, the Interview Survey for
         uiOutput("h1"),
         tableOutput("var_t1"),
         uiOutput("h2"),
-        dataTableOutput("summ_t1"),
+    #    dataTableOutput("summ_t1"),
+      uiOutput("summtab_t1"),
         uiOutput("h3"),
-        plotOutput("plot_t1"),
-        verbatimTextOutput("event")
+     plotlyOutput("plot_t1"), 
+       verbatimTextOutput("event")
       ,width=9)
       
     ) #close sidebarLayout 
@@ -208,6 +210,27 @@ server <- function(input, output) {
     selectInput("var_t1", "Choose a variable:", varlist)
   })  
   
+  output$ui_contopt_t1<-renderUI({
+    if (is.null(input$data_t1)|is.null(input$year_t1)|is.null(input$qtr_t1)|is.null(input$var_t1))
+      return()
+    
+    fdat<-filter(get(input$data_t1),fileyear==input$year_t1,fileqtr==input$qtr_t1) %>%
+      select(input$var_t1)
+    
+    #determine var type
+    vartype<-fdat[[1]] %>% typeof()
+    catvar<-switch(vartype,
+                      character=TRUE,
+                      integer=FALSE,
+                      double=FALSE,
+                      logical=TRUE)
+    
+    if(!catvar){
+    radioButtons("contdisp","Plot options",choices=c("density"="dens","histogram"="hist"))
+    }
+  })  
+  
+  
 # display button reactive  
 t1<-eventReactive(input$dispButton_t1,{
     
@@ -275,7 +298,21 @@ output$h2<-renderUI({
   h3("Summary")
 })
 
-output$summ_t1 <- DT::renderDataTable({
+
+
+output$summtab_t1<-renderUI({
+  if (is.null(input$data_t1)|is.null(input$year_t1))
+    return()
+  t1<-t1()
+  if (t1$catvar_t1){ 
+    dataTableOutput("summ_t1a")
+  } else {
+    dataTableOutput("summ_t1b")
+  }
+  
+})
+
+output$summ_t1a <- DT::renderDataTable({
   t1<-t1()
   if (t1$catvar_t1){
     group_by(t1$fdat_t1[1],t1$fdat_fc_t1) %>% dplyr::summarize(Freq=n()) %>%
@@ -285,30 +322,56 @@ output$summ_t1 <- DT::renderDataTable({
   } else { #!don't reverse order of t1 & t2 na.omit has weird residual behavior
     t2<-t1$fdat_t1[1] %>% dplyr::summarize(n=n(),`NA`= sum(is.na( eval(parse(text=isolate(input$var_t1))) )))
     t1<-summarize_all(na.exclude(t1$fdat_t1[1]),funs(min,mean=round(mean(.),2),
-                                                     median,max,sd=round(sd(.),3),IQR))   
+                                                     median,max,sd=round(sd(.),3),IQR))
     as.tibble(c(t1,t2))
   }
-},rownames= FALSE)
+},rownames= FALSE, options = list(lengthMenu = c(10, 15, 20), pageLength = 10, 
+                                  orderClasses = TRUE))
    
+
+output$summ_t1b <- DT::renderDataTable({
+  t1<-t1()
+  if (t1$catvar_t1){
+    group_by(t1$fdat_t1[1],t1$fdat_fc_t1) %>% dplyr::summarize(Freq=n()) %>%
+      dplyr::rename(Category=`t1$fdat_fc_t1`) %>%
+      full_join(.,t1$fdc_t1,by=c("Category"="Code Description")) %>%
+      select("Code Value",Category,Freq)
+  } else { #!don't reverse order of t1 & t2 na.omit has weird residual behavior
+    t2<-t1$fdat_t1[1] %>% dplyr::summarize(n=n(),`NA`= sum(is.na( eval(parse(text=isolate(input$var_t1))) )))
+    t1<-summarize_all(na.exclude(t1$fdat_t1[1]),funs(min,mean=round(mean(.),2),
+                                                     median,max,sd=round(sd(.),3),IQR))
+    as.tibble(c(t1,t2))
+  }
+},rownames= FALSE,options=list(paging = FALSE,searching=FALSE))
+
+
 #display plot
 output$h3<-renderUI({
   t<-t1() 
   h3("Plot")
 })
 
-output$plot_t1 <- renderPlot({
-  t1<-t1()
+#output$plot_t1 <- renderPlot({
+output$plot_t1 <- renderPlotly({
+ t1<-t1()
   if (t1$catvar_t1){
-    ggplot(as.tibble(t1$fdat_fc_t1),aes(value))+geom_bar()+
-      theme(axis.text.x = element_text(angle = 30, hjust = 1),
+  p<- ggplot(as.tibble(t1$fdat_fc_t1),aes(value))+geom_bar()+
+      theme(axis.text.x = element_text(angle = 45, hjust = 1),
             axis.text=element_text(size=14),
             axis.title=element_text(size=16,face="bold")) + labs(x="Category")
   } else {
-    ggplot(t1$fdat_t1,aes(eval(parse(text=isolate(input$var_t1))) )) + geom_density() +
+    p<- ggplot(t1$fdat_t1,aes(x=eval(parse(text=isolate(input$var_t1) )) ) ) + labs(x="") +
       theme(axis.text=element_text(size=14),
-            axis.title=element_text(size=16,face="bold")) + labs(x="")
+            axis.title=element_text(size=16,face="bold")) 
+   if (input$contdisp=="dens"){
+     p<-p+geom_density()
+   } else {
+     p<-p+geom_histogram(stat="bin")
+   }
+   
   }
-  
+ 
+  ggplotly(p,tooltip=c("y"),width=1100,height=500)
 })
   
 #use this to check input vals
@@ -362,8 +425,8 @@ output$plot_t1 <- renderPlot({
      theme(legend.title=element_blank(),
            legend.text=element_text(size=12),
            axis.text=element_text(size=14),
-           axis.title=element_text(size=16,face="bold"),
-           axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))
+           axis.title=element_text(size=16,face="bold")
+           # ,axis.title.y = element_text(margin = margin(t = 0, r = 50, b = 0, l = 50))
            ) 
    
    if (input$showse_t3){
