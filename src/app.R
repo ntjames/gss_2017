@@ -16,6 +16,7 @@ library(lubridate)
 library(shiny)
 library(plotly)
 library(DT)
+library(shinythemes)
 #library(shinyjs)
 
 #load data
@@ -26,12 +27,13 @@ load(file.path(wd,"cache","com_plt.RData")) # scraped combined tables plots
 cats_t3<-filter(com_plt,level<=2) %>% select(cat1) %>% distinct() %>% flatten() %>% unlist()
 
 #### Define UI ####
-ui <- fluidPage(
+ui <- fluidPage( theme = shinytheme("readable"),
+  #shinythemes::themeSelector(),
    
-   # Application title
+  # Application title
    #titlePanel("Consumer Expenditure Data"),
   # useShinyjs(),
-navbarPage("Consumer Expenditure Data", # selected="Descriptives", #make Descriptives selected
+navbarPage("Consumer Expenditure Data",
   
   ### Tab 0 input ###
   tabPanel("About",
@@ -63,7 +65,7 @@ collected by the Census Bureau for BLS in two surveys, the Interview Survey for
          space constraints, as we are running everything locally and using open-source
          tools. Without space and computing constraints, this tool would allow other files
          to be explored.' ),
-         strong('Visualization'), 
+         strong('Annual Trends'), 
          p('This tab allows the user to view the annual averages from 2013 onward.
            The CES data underwent a change in the way it was reported in 2012; in the future
            we would update with additional years after reformatting.' ),
@@ -79,13 +81,23 @@ collected by the Census Bureau for BLS in two surveys, the Interview Survey for
       sidebarPanel(
         selectInput("data_t1", "Choose a dataset:",
                      choices=list(
-                            Interview=c("FMLI"="fmli","MEMI"="memi","MTBI"="mtbi", "ITBI"="itbi",
-                               "ITII"="itii","NTAXI"="ntaxi","FPAR"="fpar","MCHI"="mchi"),
-                            Diary=c("FMLD"="fmld","MEMD"="memd","DTBD"="dtbd","EXPD"="expd",
-                                    "DTID"="dtid") 
+                            Interview=c("FMLI (characteristics, income, weights, and summary level expenditures for the CU)"="fmli",
+                                        "MEMI (characteristics and income for each member in the CU)"="memi",
+                                        "MTBI (detailed monthly expenditure file categorized by Universal Classification Code (UCC))"="mtbi",
+                                        "ITBI (Consumer Unit monthly income file categorized by UCC)"="itbi",
+                               "ITII (Consumer Unit monthly imputed income file categorized by UCC)"="itii",
+                               "NTAXI (federal and state tax information for each tax unit in the CU)"="ntaxi",
+                               "FPAR (paradata about the survey)"="fpar",
+                               "MCHI (data about the contact history)"="mchi"),
+                            Diary=c("FMLD (characteristics, income, weights, and summary level expenditures for the CU)"="fmld",
+                                    "MEMD (characteristics and income for each member in the CU)"="memd",
+                                    "DTBD (detailed weekly expenditure file categorized by UCC)"="dtbd",
+                                    "EXPD (detailed annual income file categorized by UCC)"="expd",
+                                    "DTID (Consumer Unit imputed income file categorized by UCC)"="dtid") 
                               )),
         uiOutput("ui_year_t1"),
         uiOutput("ui_qtr_t1"),
+        uiOutput("ui_qtr_ex_t1"),
         uiOutput("ui_var_t1"), 
         uiOutput("ui_contopt_t1"), 
         actionButton("dispButton_t1", "Display")
@@ -109,8 +121,8 @@ collected by the Census Bureau for BLS in two surveys, the Interview Survey for
   #  removed
   
   ### Tab 3 input ###
-  tabPanel("Annual",
-   tags$head(tags$style(HTML(".multicol{font-size:16px;
+  tabPanel("Annual Trends",
+   tags$head(tags$style(HTML(".multicol{font-size:15px;
                           height:auto;
                           -webkit-column-count: 2;
                           -moz-column-count: 2;
@@ -183,6 +195,19 @@ server <- function(input, output) {
     selectInput("qtr_t1", "Choose a quarter:", qtrvec)
   })
 
+  output$ui_qtr_ex_t1 <-renderUI({
+    if (is.null(input$data_t1)|is.null(input$year_t1)|is.null(input$qtr_t1)|is.null(input$var_t1))
+      return()
+    
+    if (input$qtr_t1=="1x"){ 
+      text<-renderText({ "*“x” signifies that the 1st quarter file of the selected calendar year is not identical to the
+5th quarter file of the previous calendar year release." }) 
+    text()
+    }
+    
+  #  h1(textOutput("expl") )
+  })
+  
   output$ui_var_t1<-renderUI({
     if (is.null(input$data_t1)|is.null(input$year_t1)|is.null(input$qtr_t1))
       return()
@@ -298,11 +323,9 @@ output$h2<-renderUI({
   h3("Summary")
 })
 
-
-
 output$summtab_t1<-renderUI({
-  if (is.null(input$data_t1)|is.null(input$year_t1))
-    return()
+ # if (is.null(input$data_t1)|is.null(input$year_t1))
+  #  return()
   t1<-t1()
   if (t1$catvar_t1){ 
     dataTableOutput("summ_t1a")
@@ -325,7 +348,7 @@ output$summ_t1a <- DT::renderDataTable({
                                                      median,max,sd=round(sd(.),3),IQR))
     as.tibble(c(t1,t2))
   }
-},rownames= FALSE, options = list(lengthMenu = c(10, 15, 20), pageLength = 10, 
+},rownames= FALSE, options = list(lengthMenu = c(5, 10, 20), pageLength = 5, 
                                   orderClasses = TRUE))
    
 
@@ -339,10 +362,11 @@ output$summ_t1b <- DT::renderDataTable({
   } else { #!don't reverse order of t1 & t2 na.omit has weird residual behavior
     t2<-t1$fdat_t1[1] %>% dplyr::summarize(n=n(),`NA`= sum(is.na( eval(parse(text=isolate(input$var_t1))) )))
     t1<-summarize_all(na.exclude(t1$fdat_t1[1]),funs(min,mean=round(mean(.),2),
-                                                     median,max,sd=round(sd(.),3),IQR))
+                                                     median=round(median(.),2),
+                                                     max,sd=round(sd(.),3),IQR))
     as.tibble(c(t1,t2))
   }
-},rownames= FALSE,options=list(paging = FALSE,searching=FALSE))
+},rownames= FALSE,options=list(paging = FALSE,searching=FALSE,ordering=FALSE))
 
 
 #display plot
@@ -371,7 +395,7 @@ output$plot_t1 <- renderPlotly({
    
   }
  
-  ggplotly(p,tooltip=c("y"),width=1100,height=500)
+  ggplotly(p,tooltip=c("y"),width=1150,height=500)
 })
   
 #use this to check input vals
@@ -423,7 +447,7 @@ output$plot_t1 <- renderPlotly({
    p<-ggplot(filtered_plt, aes(yr,Mean,group=interaction(cugrp,cat1),color=cugrp,linetype=cat1))+
      geom_line()+ labs(x="Year",y="Mean ($)") + 
      theme(legend.title=element_blank(),
-           legend.text=element_text(size=12),
+           legend.text=element_text(size=10),
            axis.text=element_text(size=14),
            axis.title=element_text(size=16,face="bold")
            # ,axis.title.y = element_text(margin = margin(t = 0, r = 50, b = 0, l = 50))
