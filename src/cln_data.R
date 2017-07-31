@@ -87,6 +87,36 @@ dry_files<-unlist(majds_d)
 major_ds<-c(int_files,dry_files)
 save(list=major_ds,file=file.path(wd,"cache","maj.RData"))
 
+#smaller version for deploy app
+fmli<-filter(fmli,fileqtr %in% c("3","4","1x"))
+memi<-filter(memi,fileqtr %in% c("3","4","1x"))
+mtbi<-filter(mtbi,fileqtr %in% c("3","4","1x"))
+itbi<-filter(itbi,fileqtr %in% c("3","4","1x"))
+itii<-filter(itii,fileqtr %in% c("3","4","1x"))
+ntaxi<-filter(ntaxi,fileqtr %in% c("3","4","1x"))
+fpar<-filter(fpar,fileqtr %in% c("3","4","1x"))
+mchi<-filter(mchi,fileqtr %in% c("3","4","1x"))
+fmld<-filter(fmld,fileqtr %in% c("3","4","1x"))
+memd<-filter(memd,fileqtr %in% c("3","4","1x"))
+dtbd<-filter(dtbd,fileqtr %in% c("3","4","1x"))
+expd<-filter(expd,fileqtr %in% c("3","4","1x"))
+dtid<-filter(dtid,fileqtr %in% c("3","4","1x"))
+
+
+save(fmli,file=file.path(wd,"deploy","fmli.RData"))
+save(memi,file=file.path(wd,"deploy","memi.RData"))
+save(mtbi,file=file.path(wd,"deploy","mtbi.RData"))
+save(itbi,file=file.path(wd,"deploy","itbi.RData"))
+save(itii,file=file.path(wd,"deploy","itii.RData"))
+save(ntaxi,file=file.path(wd,"deploy","ntaxi.RData"))
+save(fpar,file=file.path(wd,"deploy","fpar.RData"))
+save(mchi,file=file.path(wd,"deploy","mchi.RData"))
+save(fmld,file=file.path(wd,"deploy","fmld.RData"))
+save(memd,file=file.path(wd,"deploy","memd.RData"))
+save(dtbd,file=file.path(wd,"deploy","dtbd.RData"))
+save(expd,file=file.path(wd,"deploy","expd.RData"))
+save(dtid,file=file.path(wd,"deploy","dtid.RData"))
+
 #read in data dictionary 
 stubpath<-file.path(getwd(),"stubdata")
 
