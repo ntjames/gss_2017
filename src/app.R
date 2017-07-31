@@ -37,8 +37,8 @@ navbarPage("Consumer Expenditure Data",
   
   ### Tab 0 input ###
   tabPanel("About",
-         h1( 'Data Challenge 2017'), h3('Government Statistics Section'),
-         a(strong('Consumer Expenditure Data'),href='a(https://www.bls.gov/cex/'), 
+         h1( 'JSM 2017 Data Challenge'), h3('Government Statistics Section'),
+         a(strong('Consumer Expenditure Data'),href='a(https://www.bls.gov/cex/'),br(), 
 HTML(paste('The Consumer Expenditure Surveys (CE) program provides data on expenditures, 
 income, and demographic characteristics of consumers in the United States. 
 Data are provided in tables, databases, news releases, reports, and public-use microdata files. Data are 
@@ -54,21 +54,19 @@ collected by the Census Bureau for BLS in two surveys, the Interview Survey for
          br(),
          br(),
          strong('Data Challenge'),
-         p('For the GSS Data Challenge, we were interested in exploring the possibilities of
-           interactive exploratory data analysis. As we dug into the data, we were overwhelmed by
-           the sheer amount. Asking ourselves what we would want if we were beginning to explore the 
-           data for a statistical analysis, we decided to build an interactive data dictionary and basic
-           plotting mechanism for preliminary visualizations.'),
+         p('For the GSS Data Challenge, we were interested in creating tools to allow quick, simple, interactive access to basic dataset
+          and variable information as well as comparisons of annual trends for intitial exploratory data analysis. 
+          Two modules were developed. '),
          strong('Interactive Data Dictionary'), 
-         p('This tab allows the user to load several of the largest datasets and
-         explore variable names and values over time. We were limited by size and 
-         space constraints, as we are running everything locally and using open-source
-         tools. Without space and computing constraints, this tool would allow other files
-         to be explored.' ),
+         p('The Interactive Data Dictionary module allows the user to load any of the "major" CE Public Use Microdata
+          datasets (8 Interview, 5 Diary) and explore summary statistics, codebook values, frequencies, and basic
+          visualizations.' ),
          strong('Annual Trends'), 
-         p('This tab allows the user to view the annual averages from 2013 onward.
-           The CES data underwent a change in the way it was reported in 2012; in the future
-           we would update with additional years after reformatting.' ),
+         p('The Annual Trends module allows the user to view average annual Income and Expenditure 
+            data from 2011 to 2015 for major categories overall and stratified by 8 Consumer Unit (CU) characteristics. The 
+            interactive plot allows users to hover over a data point to view more information, 
+            zoom/pan to focus on a specific area of interest,
+           and isolate or hide individual traces.' ),
          br(),
          p(paste('1: '),a('https://www.bls.gov/cex/',href='https://www.bls.gov/cex/'))
   ), #close tab 0
