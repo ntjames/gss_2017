@@ -6,13 +6,13 @@ This project was developed for the 2017 Joint Statistical Meetings GSS Data Chal
 
 The main files are:
   
-  /src/cln_data.R
-  /src/scrp_data.R
-  /src/app.R
+  /src/cln_data.R  
+  /src/scrp_data.R  
+  /src/app.R  
 
 This project is organized using John Myles White's excellent [ProjectTemplate](http://projecttemplate.net/) R package. To load this project, you'll first need to install the package using `install.packages('ProjectTemplate')` and attach it with `ibrary('ProjectTemplate')`.  Then use `setwd()` to change the working directory to the location where this README file is located. Then you need to run the following two lines of R code:
 
-	library('ProjectTemplate')
+  library('ProjectTemplate')
 	load.project()
 
 After you enter the second line of code, you'll see a series of automated
