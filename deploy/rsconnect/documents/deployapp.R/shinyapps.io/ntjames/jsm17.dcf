@@ -3,8 +3,9 @@ title: jsm17
 account: ntjames
 server: shinyapps.io
 appId: 199977
-bundleId: 917664
+bundleId: 921729
 url: https://ntjames.shinyapps.io/jsm17/
-when: 1501158261.32776
+when: 1501506267.07398
 asMultiple: FALSE
 asStatic: FALSE
+ignoredFiles: maj.RData
