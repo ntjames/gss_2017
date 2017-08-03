@@ -3,12 +3,8 @@
 user<-system2("whoami", stdout=TRUE)
 wd<-switch(user,
            nathan=file.path("~/Dropbox/njames/school/PhD/misc/gss_2017"),
-		      'gosset\\nathan'=file.path("C:","Users","Nathan","Dropbox","njames","school","PhD","misc","gss_2017"),
            jacquelynneal=file.path("~jacquelynneal/Desktop/gss_2017"))
 setwd(wd)
-
-#source on surface
-#source(file.path(wd,"src","app.R"))
 
 #load libraries
 library(tidyverse)
@@ -17,7 +13,6 @@ library(shiny)
 library(plotly)
 library(DT)
 library(shinythemes)
-#library(shinyjs)
 
 #load data
 load(file.path(wd,"cache","maj.RData")) # major datasets for tab1
@@ -30,9 +25,6 @@ cats_t3<-filter(com_plt,level<=2) %>% select(cat1) %>% distinct() %>% flatten() 
 ui <- fluidPage( theme = shinytheme("readable"),
   #shinythemes::themeSelector(),
    
-  # Application title
-   #titlePanel("Consumer Expenditure Data"),
-  # useShinyjs(),
 navbarPage("Consumer Expenditure Data",
   
   ### Tab 0 input ###

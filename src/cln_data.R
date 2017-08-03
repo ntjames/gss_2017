@@ -11,11 +11,8 @@ setwd(wd)
 library(ProjectTemplate)
 library(readxl)
 
-# don't perform munging  i.e. keep all data (e.g. diary and individual EXPN)
+# don't perform munging i.e. keep all data (e.g. diary and individual EXPN)
  load.project(list('cache_loading'=FALSE,'munging'=FALSE)) 
-
-# only load cache
-# load.project(list('dat_loading'=FALSE,'munging'=FALSE)) 
 
 if (0) {
 #Interview
@@ -28,10 +25,8 @@ if (0) {
   # NTAXI - fed. and state tax info
   # FPAR - CU level paradata about interview survey
   # MCHI - para data about each interview contact attempt
-   
   # ISTUB - aggregation scheme used in published CES interview tables, 
-  #         contain UCCs & abbreviated titles
-   
+  #         contain UCCs & abbreviated titles (not included app)
   # EXPN - 43 detailed expenditure files
 
 # Diary
@@ -40,8 +35,7 @@ if (0) {
   # DTBD - contains CU characteristic and income data.
   # EXPD - expenditure recorded by a CU in a weekly diary is identified by UCC
   # DTID -  similar to the DTBD file, w/ imputation
-  
-  #DSTUB
+  # DSTUB - aggregation scheme (not included app)
 }
 
 ## function to append major datasets
@@ -87,35 +81,13 @@ dry_files<-unlist(majds_d)
 major_ds<-c(int_files,dry_files)
 save(list=major_ds,file=file.path(wd,"cache","maj.RData"))
 
-#smaller version for deploy app
-fmli<-filter(fmli,fileqtr %in% c("3","4","1x"))
-memi<-filter(memi,fileqtr %in% c("3","4","1x"))
-mtbi<-filter(mtbi,fileqtr %in% c("3","4","1x"))
-itbi<-filter(itbi,fileqtr %in% c("3","4","1x"))
-itii<-filter(itii,fileqtr %in% c("3","4","1x"))
-ntaxi<-filter(ntaxi,fileqtr %in% c("3","4","1x"))
-fpar<-filter(fpar,fileqtr %in% c("3","4","1x"))
-mchi<-filter(mchi,fileqtr %in% c("3","4","1x"))
-fmld<-filter(fmld,fileqtr %in% c("3","4","1x"))
-memd<-filter(memd,fileqtr %in% c("3","4","1x"))
-dtbd<-filter(dtbd,fileqtr %in% c("3","4","1x"))
-expd<-filter(expd,fileqtr %in% c("3","4","1x"))
-dtid<-filter(dtid,fileqtr %in% c("3","4","1x"))
-
-
-save(fmli,file=file.path(wd,"deploy","fmli.RData"))
-save(memi,file=file.path(wd,"deploy","memi.RData"))
-save(mtbi,file=file.path(wd,"deploy","mtbi.RData"))
-save(itbi,file=file.path(wd,"deploy","itbi.RData"))
-save(itii,file=file.path(wd,"deploy","itii.RData"))
-save(ntaxi,file=file.path(wd,"deploy","ntaxi.RData"))
-save(fpar,file=file.path(wd,"deploy","fpar.RData"))
-save(mchi,file=file.path(wd,"deploy","mchi.RData"))
-save(fmld,file=file.path(wd,"deploy","fmld.RData"))
-save(memd,file=file.path(wd,"deploy","memd.RData"))
-save(dtbd,file=file.path(wd,"deploy","dtbd.RData"))
-save(expd,file=file.path(wd,"deploy","expd.RData"))
-save(dtid,file=file.path(wd,"deploy","dtid.RData"))
+#smaller version of data for deploy app
+for (j in major_ds){
+  ds<-get(j)
+  dsc<-filter(ds,fileqtr %in% c("3","4","1x"))
+  assign(j,dsc)
+  save(list=j, file=file.path(wd,"deploy",paste0(j,".RData")))
+}
 
 #read in data dictionary 
 stubpath<-file.path(getwd(),"stubdata")

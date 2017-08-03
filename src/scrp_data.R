@@ -45,7 +45,6 @@ for (j in 1:nrow(readin)){
   assign(nm,read_excel(readin[j,3], col_names = TRUE, skip=2))
 }
 
-
 # source in stubfile & use for filtering, etc. below
 stubpath<-file.path(getwd(),"stubdata")
 stubfn<-dir(stubpath,"*.txt")
@@ -55,7 +54,7 @@ stubfiles0<-lapply(stubfn,function(x) read_table(file.path(stubpath,x), skip=1,
                                                  "var_ucc","source","factor",
                                                  "group")))
 
-# stubfiles0[[1]] # some stubfiles not formatted correctly, so reading in improperly
+# stubfiles0[[1]] # some stubfiles not formatted correctly & reading in improperly
 #stubfile0<-read_table(file.path(stubpath,stubfn), skip=1,
 #                      col_names=c("type","level","title","var_ucc","source","factor","group"))
 

@@ -1,15 +1,4 @@
 
-#set path depending on user
-#user<-system2("whoami", stdout=TRUE)
-#wd<-switch(user,
-#           nathan=file.path("~/Dropbox/njames/school/PhD/misc/gss_2017"),
-#		      'gosset\\nathan'=file.path("C:","Users","Nathan","Dropbox","njames","school","PhD","misc","gss_2017"),
-#           jacquelynneal=file.path("~jacquelynneal/Desktop/gss_2017"))
-#setwd(wd)
-
-#source on surface
-#source(file.path(wd,"src","app.R"))
-
 #load libraries
 library(tidyverse)
 library(lubridate)
@@ -21,7 +10,6 @@ library(shinythemes)
 #load data
 load("dict.RData") # data dictionary & codes
 load("com_plt.RData") # scraped combined tables plots
-#load("maj.RData") # major datasets for tab1
 
 #load individually
 load("fmli.RData") 
