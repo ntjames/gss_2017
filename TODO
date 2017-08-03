@@ -1,11 +1,5 @@
 For annual plots
--scrape additional categories & years of data
--append category name in from of cugrp(should fix income issue) 
--fix margins, axes, legends of plot (https://github.com/chriddyp/ggplot2-plotly-cookbook/blob/master/legends.R)
+-fix margins, axes, legends of plot
 
 For data dictionary/descriptives
--read in additional major datasets & additional years (to 2005?)
--tweak layout/formatting
--look at know issues w/ long factors and non-matching codes
-
-Option to download or export data/figure??
+-look at know issues w/ long factors (NEWID) and non-matching codes (e.g. '01' v '1')

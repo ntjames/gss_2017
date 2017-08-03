@@ -1,15 +1,16 @@
 # gss_2017
 
-Code for 2017 JSM Data Challenge
+2017 JSM Data Challenge
 
-ProjectTemplate is an R package that helps you organize your statistical
-analysis projects. Since you're reading this file, we'll assume that you've
-already called `create.project()` to set up this project and all of its
-contents.
+This project was developed for the 2017 Joint Statistical Meetings GSS Data Challenge. I provides tools to allow quick, simple, interactive access to basic dataset and variable information as well as comparisons of annual trends for intitial exploratory data analysis. 
 
-To load your new project, you'll first need to `setwd()` into the directory
-where this README file is located. Then you need to run the following two
-lines of R code:
+The main files are:
+  
+  /src/cln_data.R
+  /src/scrp_data.R
+  /src/app.R
+
+This project is organized using John Myles White's excellent [ProjectTemplate](http://projecttemplate.net/) R package. To load this project, you'll first need to install the package using `install.packages('ProjectTemplate')` and attach it with `ibrary('ProjectTemplate')`.  Then use `setwd()` to change the working directory to the location where this README file is located. Then you need to run the following two lines of R code:
 
 	library('ProjectTemplate')
 	load.project()
@@ -31,4 +32,3 @@ If the files start with the two lines mentioned above:
 You'll have access to all of your data, already fully preprocessed, and
 all of the libraries you want to use.
 
-For more details about ProjectTemplate, see http://projecttemplate.net
