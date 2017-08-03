@@ -60,8 +60,9 @@ collected by the Census Bureau for BLS in two surveys, the Interview Survey for
             zoom/pan to focus on a specific area of interest,
            and isolate or hide individual traces.' ),
          br(),
-         p(paste('1: '),a('https://www.bls.gov/cex/',href='https://www.bls.gov/cex/'))
-  ), #close tab 0
+        p(paste('1: '),a('https://www.bls.gov/cex/',href='https://www.bls.gov/cex/')),
+         p(a('[github repo]',href='https://github.com/ntjames/gss_2017') ) 
+ ), #close tab 0
   
   ### Tab 1 input ###
   tabPanel("Interactive Data Dictionary",
