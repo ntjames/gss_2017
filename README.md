@@ -12,8 +12,8 @@ The main files are:
 
 This project is organized using John Myles White's excellent [ProjectTemplate](http://projecttemplate.net/) R package. To load this project, you'll first need to install the package using `install.packages('ProjectTemplate')` and attach it with `ibrary('ProjectTemplate')`.  Then use `setwd()` to change the working directory to the location where this README file is located. Then you need to run the following two lines of R code:
 
-  library('ProjectTemplate')
-	load.project()
+  library('ProjectTemplate')  
+	load.project()  
 
 After you enter the second line of code, you'll see a series of automated
 messages as ProjectTemplate goes about doing its work. This work involves:
