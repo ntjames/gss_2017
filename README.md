@@ -2,7 +2,7 @@
 
 2017 JSM Data Challenge
 
-This project was developed for the 2017 Joint Statistical Meetings GSS Data Challenge. I provides tools to allow quick, simple, interactive access to basic dataset and variable information as well as comparisons of annual trends for intitial exploratory data analysis. 
+This project was developed for the 2017 Joint Statistical Meetings GSS Data Challenge. It provides tools to allow quick, simple, interactive access to basic dataset and variable information and comparisons of annual trends for intitial exploratory data analysis. The app can be accessed at: https://ntjames.shinyapps.io/jsm17/
 
 The main files are:
   
